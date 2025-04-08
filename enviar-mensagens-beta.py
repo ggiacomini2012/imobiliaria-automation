@@ -8895,7 +8895,7 @@ Faça uma excepcional semana!
 
 Vamos pra cima!
 
-Dieison Corazza"""
+🚀"""
     # Envia a mensagem
     # kit.sendwhatmsg_instantly(f"+{phone_number}", message, 40, True, 6)
     
