@@ -8889,7 +8889,7 @@ Caso lhe interesse, me retorna.
 
 Boa semana. 🙌"""
     
-    mensagem3 = f"""Bom diaa {name} 🙏🏾
+    mensagem3 = f"""Boa tardee {name} 🙏🏾
 
 Faça uma excepcional semana!
 
