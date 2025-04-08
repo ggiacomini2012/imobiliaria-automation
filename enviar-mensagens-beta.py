@@ -8910,6 +8910,8 @@ Dieison Corazza"""
     time.sleep(1)
     pyautogui.click(457, 751) #whats
     time.sleep(1)
+    pyautogui.click(619, 705) #whats chat de mensagem
+    time.sleep(1)
 
 
 
@@ -8921,7 +8923,7 @@ Dieison Corazza"""
     copy_image_to_clipboard(image_path_new)
     time.sleep(0.5)
     pyautogui.hotkey('ctrl', 'v')
-    time.sleep(3)
+    time.sleep(4)
     pyautogui.press('enter')
     time.sleep(0.5)
     
