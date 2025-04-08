@@ -1,3 +1,9 @@
+from PIL import Image
+import win32clipboard
+import io
+import pyautogui
+import time
+import os
 import pywhatkit as kit
 import time
 import pyautogui
@@ -15,6 +21,26 @@ import threading
 import queue
 import atexit
 import os
+
+
+def copy_image_to_clipboard(image_path):
+    image = Image.open(image_path)
+
+    # Converta para BMP (clipboard do Windows exige)
+    output = io.BytesIO()
+    image.convert("RGB").save(output, "BMP")
+    data = output.getvalue()[14:]  # Remove cabeçalho BMP
+    output.close()
+
+    # Coloca no clipboard
+    win32clipboard.OpenClipboard()
+    win32clipboard.EmptyClipboard()
+    win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
+    win32clipboard.CloseClipboard()
+
+# Caminho da imagem
+image_path_new = r"C:\Users\DELL\Downloads\cafe.jpg"
+
 
 # Nome do arquivo JSON que armazena o log de envios
 LOG_FILE = "log.json"
@@ -8863,6 +8889,13 @@ Caso lhe interesse, me retorna.
 
 Boa semana. 🙌"""
     
+    mensagem3 = f"""Bom diaa {name} 🙏🏾
+
+Faça uma excepcional semana!
+
+Vamos pra cima!
+
+Dieison Corazza"""
     # Envia a mensagem
     # kit.sendwhatmsg_instantly(f"+{phone_number}", message, 40, True, 6)
     
@@ -8879,10 +8912,16 @@ Boa semana. 🙌"""
     time.sleep(1)
 
 
-    pyperclip.copy(message2)
+
+    pyperclip.copy(mensagem3)
     time.sleep(0.5)
     pyautogui.hotkey('ctrl', 'v')
     time.sleep(0.5)
+
+    copy_image_to_clipboard(image_path_new)
+    time.sleep(0.5)
+    pyautogui.hotkey('ctrl', 'v')
+    time.sleep(3)
     pyautogui.press('enter')
     time.sleep(0.5)
     
