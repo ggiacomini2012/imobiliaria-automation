@@ -8907,6 +8907,7 @@ Dieison Corazza"""
     pyautogui.write(f'wa.me/{phone_number}')
     time.sleep(1)
     pyautogui.press('enter')
+    pyautogui.moveTo(619, 705)
     time.sleep(1)
     pyautogui.click(457, 751) #whats
     time.sleep(1)
@@ -8919,13 +8920,16 @@ Dieison Corazza"""
     time.sleep(0.5)
     pyautogui.hotkey('ctrl', 'v')
     time.sleep(0.5)
+    pyautogui.moveTo(619, 705)
 
     copy_image_to_clipboard(image_path_new)
     time.sleep(0.5)
     pyautogui.hotkey('ctrl', 'v')
     time.sleep(4)
+    pyautogui.moveTo(619, 705)
     pyautogui.press('enter')
     time.sleep(0.5)
+    pyautogui.moveTo(619, 705)
     
     # Fecha a aba do WhatsApp Web (atalho: CTRL + W)
     # pyautogui.hotkey("ctrl", "w")
