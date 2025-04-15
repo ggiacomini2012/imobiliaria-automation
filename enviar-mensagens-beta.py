@@ -8896,6 +8896,18 @@ Faça uma excepcional semana!
 Vamos pra cima!
 
 🚀"""
+
+    mensagem4 = f"""Olá {name}!
+
+Tenho uma oportunidade rara para investidores:
+Entrar junto com a construtora na compra de um terreno. (50% abaixo do valor de mercado)
+
+Essa operação tem gerado lucros de mais de 3x o capital investido.
+
+02 cotas disponíveis (frente mar) 
+
+Caso tenha interesse em saber mais me avisa que conversamos."""
+
     # Envia a mensagem
     # kit.sendwhatmsg_instantly(f"+{phone_number}", message, 40, True, 6)
     
@@ -8916,19 +8928,20 @@ Vamos pra cima!
 
 
 
-    pyperclip.copy(mensagem3)
+    pyperclip.copy(mensagem4)
     time.sleep(0.5)
     pyautogui.hotkey('ctrl', 'v')
     time.sleep(0.5)
     pyautogui.moveTo(619, 705)
 
-    copy_image_to_clipboard(image_path_new)
-    time.sleep(0.5)
-    pyautogui.hotkey('ctrl', 'v')
-    time.sleep(4)
+    # copy_image_to_clipboard(image_path_new)
+    # time.sleep(0.5)
+    # pyautogui.hotkey('ctrl', 'v')
+    # time.sleep(4)
+
     pyautogui.moveTo(619, 705)
     pyautogui.press('enter')
-    time.sleep(0.5)
+    time.sleep(2)
     pyautogui.moveTo(619, 705)
     
     # Fecha a aba do WhatsApp Web (atalho: CTRL + W)
