@@ -3,7 +3,7 @@ import sys
 import os
 import time
 import pyautogui
-import pygetwindow as gw
+# import pygetwindow as gw # REMOVED
 import platform
 import urllib.parse
 import subprocess
@@ -36,9 +36,11 @@ SEND_BUTTON_POS = (700, 650)   # Posição do botão Enviar (seta verde)
 # SEND_BUTTON_IMG = 'gui_images/send_button.png'
 
 # Intervalos (ajuste conforme necessário)
-WAIT_AFTER_OPEN = 7.0 # Aumentado! Segundos para esperar após abrir o link
-WAIT_AFTER_PASTE = 4.5 # Segundos para esperar a pré-visualização carregar após colar
-WAIT_BEFORE_SEND_ENTER = 1.0
+WAIT_AFTER_OPEN = 10.0  # Aumentado para 10 segundos
+WAIT_AFTER_PASTE = 6.0  # Aumentado para 6 segundos
+WAIT_BEFORE_SEND_ENTER = 1.0  # Aumentado para 1 segundo
+ENTER_ATTEMPTS = 3
+ENTER_INTERVAL = 0.8  # Aumentado intervalo entre Enters
 # -------------------------------------------------
 
 # --- Funções de Clipboard ---
@@ -77,26 +79,45 @@ def copy_image_macos(image_path):
          print(f"Erro (Mac Clipboard): Imagem não encontrada em {abs_image_path}")
          return False
     try:
+        # Primeiro, tenta verificar se a imagem é válida
+        try:
+            with Image.open(abs_image_path) as img:
+                print(f"Imagem válida detectada: {img.format} {img.size}")
+        except Exception as img_e:
+            print(f"Aviso: Erro ao verificar imagem: {img_e}")
+            return False
+
         image_type = "JPEG picture"
-        if image_path.lower().endswith(".png"): image_type = "PNG picture"
-        elif image_path.lower().endswith(".gif"): image_type = "GIF picture"
+        if abs_image_path.lower().endswith(".png"): 
+            image_type = "PNG picture"
+        elif abs_image_path.lower().endswith(".gif"): 
+            image_type = "GIF picture"
         
+        print(f"Tentando copiar como {image_type}...")
         script = f'set the clipboard to (read (POSIX file "{abs_image_path}") as {image_type})'
         result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
         
         if result.returncode == 0:
             print("Imagem copiada para clipboard (macOS).")
-            return True
-        else:
-            print("Falha ao copiar como tipo específico, tentando como 'picture' genérico...")
-            script = f'set the clipboard to (read (POSIX file "{abs_image_path}") as picture)'
-            result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
-            if result.returncode == 0:
-                 print("Imagem copiada para clipboard (macOS - genérico).")
-                 return True
+            # Tenta verificar se algo foi copiado
+            verify_script = 'get the clipboard'
+            verify_result = subprocess.run(['osascript', '-e', verify_script], capture_output=True, text=True, check=False)
+            if verify_result.returncode == 0:
+                print("Clipboard contém dados após cópia.")
+                return True
             else:
-                 print(f"Erro ao copiar imagem para clipboard (macOS): {result.stderr}")
-                 return False
+                print("Aviso: Clipboard parece vazio após cópia.")
+        
+        print("Falha ao copiar como tipo específico, tentando como 'picture' genérico...")
+        script = f'set the clipboard to (read (POSIX file "{abs_image_path}") as picture)'
+        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
+        
+        if result.returncode == 0:
+             print("Imagem copiada para clipboard (macOS - genérico).")
+             return True
+        else:
+             print(f"Erro ao copiar imagem para clipboard (macOS): {result.stderr}")
+             return False
     except FileNotFoundError: 
         print("Erro: Comando 'osascript' não encontrado. Necessário para clipboard no macOS.")
         return False
@@ -130,114 +151,93 @@ def open_uri(uri):
         return True
     except Exception as e: print(f"Error opening URI: {e}"); return False
 
-def wait_for_whatsapp_active(max_wait=3): # Aumentado!
-    """Espera a janela do WhatsApp ficar ativa."""
-    print(f"Waiting up to {max_wait}s for WhatsApp window to become active...")
-    start_time = time.time()
-    while time.time() - start_time < max_wait:
-        try:
-            active_window = gw.getActiveWindow()
-            if active_window and active_window.title and "WhatsApp" in active_window.title:
-                print("WhatsApp window is active.")
-                return True
-        except Exception as e:
-             pass 
-        time.sleep(0.5)
-    print("Warning: WhatsApp window did not become active.")
-    return False
-
-# --- Função Principal (Método Copy-Paste Imagem + Copy-Paste Legenda + Enter) ---
+# --- Função Principal (Método Copy-Paste Imagem + Copy-Paste Legenda + Enter - macOS Adaptation) ---
 def send_whatsapp_image_no_clicks(phone_number, image_path, caption):
-    """Tenta enviar imagem via Copy-Paste, legenda via Copy-Paste e pressiona Enter."""
+    """Tenta enviar imagem via Copy-Paste, legenda via Copy-Paste e pressiona Enter (macOS)."""
 
     # 1. Copiar imagem para clipboard
+    print("\nIniciando processo de cópia da imagem...")
     if not copy_image_to_clipboard(image_path):
         print("Failed to copy image to clipboard. Aborting.")
         return False
 
     # 2. Abrir o chat (sem texto)
-    whatsapp_uri = f"whatsapp://send?phone={phone_number}" 
+    whatsapp_uri = f"whatsapp://send?phone={phone_number}"
     if not open_uri(whatsapp_uri):
-        return False 
+        return False
+    print(f"\nAguardando {WAIT_AFTER_OPEN} segundos após abrir WhatsApp...")
     time.sleep(WAIT_AFTER_OPEN)
 
-    # 3. Esperar a janela do WhatsApp ativar e tentar focar se necessário (Windows)
-    if not wait_for_whatsapp_active():
-         # Tentar focar se for Windows? (Opcional, pode adicionar chamada ao focus_whatsapp.py aqui)
-         if platform.system() == 'Windows':
-              print("Trying to run focus script as fallback...")
-              try:
-                  # Assumir que ambos os scripts estão na raiz do projeto
-                  script_dir = os.path.dirname(__file__) # Diretório onde este script está
-                  focus_script_path = os.path.join(script_dir, 'focus_whatsapp.py') # Caminho para focus na mesma pasta
-                  print(f"Attempting to run focus script at: {focus_script_path}")
-                  
-                  if os.path.exists(focus_script_path):
-                      # Executar a partir do diretório do script pode ser mais seguro
-                      result = subprocess.run([sys.executable, focus_script_path], cwd=script_dir, check=False, capture_output=True, text=True)
-                      print(f"Focus script stdout:\n{result.stdout}")
-                      print(f"Focus script stderr:\n{result.stderr}")
-                      print(f"Focus script return code: {result.returncode}")
-                      time.sleep(2.0) # Aumentar um pouco a espera após focar
-                      if not wait_for_whatsapp_active(max_wait=5): # Tente esperar mais um pouco
-                           print("Failed to activate even after focus script.")
-                           return False
-                      else:
-                           print("Successfully activated after focus script fallback.")
-                           # Continua para a automação GUI...
-                  else:
-                      print(f"Focus script not found at expected location: {focus_script_path}")
-                      return False # Cannot run focus script
-              except Exception as focus_e:
-                  print(f"Failed to run focus script: {focus_e}")
-                  return False
-         else: 
-             return False # Falha se não ativou e não é Windows
-
-    # 4. Sequência de Automação GUI (Colar Img -> Colar Legenda -> Enter)
+    # 4. Sequência de Automação GUI
     try:
-        print("Starting GUI automation sequence (Paste Img -> Paste Caption -> Enter - NO CLICKS)...")
+        print("\nIniciando sequência de automação GUI...")
 
-        # --- Colar a imagem --- (Assumindo que o foco está correto)
-        print("Pasting image from clipboard (Ctrl+V or Cmd+V). Trusting focus is correct...")
-        paste_command = ('command', 'v') if platform.system() == 'Darwin' else ('ctrl', 'v')
+        # --- Colar a imagem ---
+        print("\nColando imagem do clipboard (Cmd+V)...")
+        # Tenta verificar clipboard antes de colar
+        verify_script = 'get the clipboard'
+        verify_result = subprocess.run(['osascript', '-e', verify_script], capture_output=True, text=True, check=False)
+        if verify_result.returncode == 0:
+            print("Clipboard contém dados antes de colar.")
+        else:
+            print("Aviso: Clipboard parece vazio antes de colar!")
+
+        # macOS specific paste command
+        paste_command = ('command', 'v')
         pyautogui.hotkey(*paste_command)
-        print("Image paste command sent.")
-        time.sleep(WAIT_AFTER_PASTE) # Esperar pré-visualização da imagem
+        print("Comando de colar enviado.")
+        print(f"Aguardando {WAIT_AFTER_PASTE} segundos para a imagem carregar...")
+        time.sleep(WAIT_AFTER_PASTE)
 
         # --- Copiar e Colar a legenda ---
-        print(f"Copying caption to clipboard: {caption[:50]}...")
+        print(f"\nCopiando legenda para clipboard: {caption[:50]}...")
         try:
             pyperclip.copy(caption)
-            print("Caption copied to clipboard.")
-            time.sleep(0.2) # Pequena pausa para o clipboard atualizar
-            print("Pasting caption from clipboard (Ctrl+V or Cmd+V)...")
-            pyautogui.hotkey(*paste_command) # Cola a legenda
-            print("Caption paste command sent.")
+            print("Legenda copiada para clipboard.")
+            time.sleep(0.5)  # Aumentado para 0.5s
+            print("Colando legenda do clipboard (Cmd+V)...")
+            pyautogui.hotkey(*paste_command)
+            print("Comando de colar legenda enviado.")
+            time.sleep(WAIT_BEFORE_SEND_ENTER)
         except Exception as clip_e:
-             print(f"ERROR copying/pasting caption: {clip_e}.")
-             # Decide se continua sem legenda ou falha
-             # return False # Descomente para falhar se não conseguir copiar/colar legenda
-             pass # Tenta enviar mesmo assim
-        time.sleep(WAIT_BEFORE_SEND_ENTER)
+             print(f"ERRO ao copiar/colar legenda: {clip_e}")
+             print("Continuando sem legenda após erro.")
+             pass
 
         # --- Pressionar Enter para Enviar ---
-        print(f"Pressing Enter to send...")
-        try:
-            pyautogui.press('enter')
-            print("Enter key pressed.")
-        except Exception as press_e:
-             print(f"ERROR pressing Enter key: {press_e}. Check focus/permissions.")
-             return False
+        print(f"\nTentando pressionar Enter {ENTER_ATTEMPTS} vezes...")
+        send_success = False
+        for attempt in range(ENTER_ATTEMPTS):
+            try:
+                print(f"  Tentativa de Enter {attempt + 1}/{ENTER_ATTEMPTS}...")
+                pyautogui.press('enter')
+                print("  Tecla Enter pressionada.")
+                send_success = True
+            except pyautogui.FailSafeException:
+                 print("FAILSAFE TRIGGERED (mouse no canto). Parando.")
+                 send_success = False
+                 break
+            except Exception as press_e:
+                 print(f"ERRO ao pressionar Enter na tentativa {attempt + 1}: {press_e}")
+                 send_success = False
 
-        return True # Sucesso na automação
+            if attempt < ENTER_ATTEMPTS - 1:
+                 print(f"  Aguardando {ENTER_INTERVAL} segundos antes da próxima tentativa...")
+                 time.sleep(ENTER_INTERVAL)
+
+        if not send_success:
+            print("\nFalha ao enviar comando Enter.")
+            return False
+
+        print("\nSequência de automação GUI finalizada.")
+        return True
 
     except pyautogui.FailSafeException:
-        print("FAILSAFE TRIGGERED (moved mouse to corner). Stopping GUI automation.")
+        print("\nFAILSAFE TRIGGERED (mouse no canto). Parando automação GUI.")
         return False
     except Exception as e:
-        print(f"Error during GUI automation: {e}")
-        try: print(f"Mouse position at error: {pyautogui.position()}")
+        print(f"\nErro durante automação GUI: {e}")
+        try: print(f"Posição do mouse no erro: {pyautogui.position()}")
         except: pass
         return False
 
@@ -251,10 +251,10 @@ if __name__ == "__main__":
     image = sys.argv[2]
     capt = sys.argv[3]
 
-    print(f"\n--- Running Send Image GUI Script (No Clicks) ---")
-    print(f"Phone: {phone}")
+    print(f"\n--- Starting Image Send GUI Script (Copy-Paste Img+Caption + Enter - NO CLICKS Method) ---") # Updated title
+    print(f"To: {phone}")
     print(f"Image: {image}")
-    print(f"Caption: {capt[:100]}...") # Limitar a exibição da legenda
+    print(f"Caption: {capt[:100]}...")
 
     # Garantir que o caminho da imagem seja absoluto
     image_abs_path = os.path.abspath(image)
@@ -264,8 +264,8 @@ if __name__ == "__main__":
 
     # Chamada da função principal
     if send_whatsapp_image_no_clicks(phone, image_abs_path, capt):
-        print("Script finished successfully (triggered send sequence).")
+        print("--- Script finished: Success (GUI automation completed) ---")
         sys.exit(0) # Sucesso
     else:
-        print("Script finished with errors.")
+        print("--- Script finished: Failure (GUI automation failed) ---")
         sys.exit(1) # Falha 
