@@ -9,9 +9,15 @@ app = Flask(__name__)
 
 # Define paths relative to this app.py file
 base_dir = os.path.dirname(__file__)
-single_send_script_path = os.path.join(base_dir, 'modules', 'send-browser2app', 'send-back.py')
-bulk_send_script_path = os.path.join(base_dir, 'codigo-final', 'bulk_sender.py')
-focus_script_path = os.path.join(base_dir, 'focus_whatsapp.py')
+# Original paths
+single_send_script_path_win = os.path.join(base_dir, 'modules', 'send-browser2app', 'send-back.py')
+bulk_send_script_path_win = os.path.join(base_dir, 'codigo-final', 'bulk_sender.py')
+focus_script_path = os.path.join(base_dir, 'focus_whatsapp.py') # Mantém, pois bulk_sender.py (Win) o chama
+send_image_gui_script_path_win = os.path.join(base_dir, 'send_image_gui.py') # Mantém, pois bulk_sender.py (Win) o chama
+# macOS specific paths
+single_send_script_path_mac = os.path.join(base_dir, 'modules', 'send-browser2app', 'send-back_mac.py')
+bulk_send_script_path_mac = os.path.join(base_dir, 'codigo-final', 'bulk_sender_mac.py')
+# Note: send_image_gui_mac.py é chamado DENTRO de bulk_sender_mac.py, então não precisamos de um path direto aqui
 
 # Define upload folder path
 UPLOAD_FOLDER = os.path.join(base_dir, 'uploads')
@@ -36,7 +42,15 @@ def dashboard():
 # Renamed old trigger for clarity
 @app.route('/trigger_single_send', methods=['POST'])
 def trigger_single_send():
-    script_path = single_send_script_path
+    # Determine which script to use based on OS
+    os_name = platform.system()
+    if os_name == 'Darwin': # macOS
+        script_path = single_send_script_path_mac
+        print("Using macOS specific script for single send.")
+    else: # Default to Windows/original script
+        script_path = single_send_script_path_win
+        print("Using default/Windows script for single send.")
+
     try:
         # ---- REVERTED TO ORIGINAL subprocess.run CODE ----
         print(f"Attempting to execute single send script: {script_path}")
@@ -98,15 +112,22 @@ def send_messages():
     elif image_file:
          print("Image file uploaded but 'Include Image' checkbox was not checked. Ignoring image.")
 
+    # Determine which script to use based on OS
+    os_name = platform.system()
+    if os_name == 'Darwin': # macOS
+        script_path = bulk_send_script_path_mac
+        print("Using macOS specific script for bulk send.")
+    else: # Default to Windows/original script
+        script_path = bulk_send_script_path_win
+        print("Using default/Windows script for bulk send.")
 
-    script_path = bulk_send_script_path # Path to the script itself
     python_executable = sys.executable
 
     # --- Build the command arguments ---
     cmd_args = [python_executable, script_path, message_template]
     if include_image and saved_image_path:
         # Add image path as the next argument IF image is included
-        # The bulk_sender.py script will need modification to handle this argument
+        # The bulk_sender(_mac).py script will need modification to handle this argument (already does)
         cmd_args.append(saved_image_path)
     # ----------------------------------
 

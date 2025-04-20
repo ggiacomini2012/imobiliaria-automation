@@ -49,7 +49,7 @@ def open_uri(uri):
         print(f"Error opening URI: {e}")
         return False
 
-def wait_for_whatsapp_active(max_wait=4):
+def wait_for_whatsapp_active(max_wait=20):
     print(f"Waiting up to {max_wait}s for WhatsApp window to become active...")
     start_time = time.time()
     while time.time() - start_time < max_wait:
@@ -214,7 +214,7 @@ if __name__ == "__main__":
 
         # Pause between contacts
         print("\nPausing before next contact...")
-        time.sleep(2) # Wait 5 seconds before the next one
+        time.sleep(5) # Wait 5 seconds before the next one
 
     print("\n--- Bulk Sending Process Finished ---")
     print(f"Successfully triggered/sent: {success_count}") # Updated message
