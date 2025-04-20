@@ -36,13 +36,15 @@ Este projeto fornece ferramentas para automatizar o envio de mensagens personali
 
 Este projeto também inclui um servidor web simples para facilitar o acionamento do script de envio do WhatsApp.
 
-1.  **Inicie o servidor:**
+1.  **Inicie o servidor e abra no navegador:**
     Certifique-se de ter instalado as dependências (incluindo Flask) com `pip install -r requirements.txt`.
+    Execute o script `run_server.py`. Ele iniciará o servidor Flask em segundo plano e tentará abrir `http://localhost:5000` no Google Chrome (ou no seu navegador padrão como fallback).
     ```bash
-    python app.py
+    python run_server.py
     ```
+    *Observação:* O script `run_server.py` terminará, mas o servidor Flask continuará rodando. Para parar o servidor, você precisará encontrar o terminal onde ele está sendo executado (procure pela saída do Flask) e pressionar `Ctrl+C`.
 
-2.  **Acesse a interface:**
+2.  **Acesse a interface (se não abrir automaticamente):**
     Abra seu navegador e vá para `http://localhost:5000` ou `http://<SEU_IP_LOCAL>:5000`.
 
 3.  **Acione o script:**

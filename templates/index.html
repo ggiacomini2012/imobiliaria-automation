@@ -9,11 +9,14 @@
 </head>
 <body>
     {% include 'partials/_navbar.html' %}
+    {% include 'partials/_sidebar.html' %}
 
-    <h1>WhatsApp Sender</h1>
-    <button id="sendButton">Abrir WhatsApp</button>
-    <div id="message"></div>
-    <pre id="output"></pre>
+    <main id="main-content">
+        <h1>WhatsApp Sender</h1>
+        <button id="sendButton">Abrir WhatsApp</button>
+        <div id="message"></div>
+        <pre id="output"></pre>
+    </main>
 
     {% include 'partials/_footer.html' %}
 

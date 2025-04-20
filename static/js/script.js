@@ -3,6 +3,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageDiv = document.getElementById('message');
     const outputPre = document.getElementById('output');
 
+    // Sidebar elements
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const closeBtn = document.querySelector('.sidebar-close-btn'); // Use querySelector for class
+
+    // Function to toggle sidebar
+    function toggleSidebar() {
+        document.body.classList.toggle('sidebar-open');
+    }
+
+    // Event listener for hamburger button
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', toggleSidebar);
+    } else {
+        console.error('Sidebar toggle button not found.');
+    }
+
+    // Event listener for close button inside sidebar
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent default anchor behavior
+            toggleSidebar();
+        });
+    } else {
+        console.error('Sidebar close button not found.');
+    }
+
     // Ensure elements were found before adding listener
     if (sendButton) {
         sendButton.addEventListener('click', () => {
