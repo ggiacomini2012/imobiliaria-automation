@@ -7,7 +7,7 @@ import pyautogui
 from PIL import Image
 
 # Intervalos (ajuste conforme necessário)
-WAIT_AFTER_OPEN = 3.0  # Aumentado para dar mais tempo para o WhatsApp abrir
+WAIT_AFTER_OPEN = 7.0  # Segundos após abrir o WhatsApp
 WAIT_AFTER_PASTE = 3.0  # Segundos após colar imagem
 WAIT_BEFORE_SEND_ENTER = 0.5  # Segundos antes do Enter
 
@@ -77,12 +77,17 @@ def send_message_with_image(phone_number, message, image_path):
         print(f"Aguardando {WAIT_AFTER_PASTE} segundos para a imagem carregar...")
         time.sleep(WAIT_AFTER_PASTE)
 
-        # 5. Colar a mensagem
+        # 5. Copiar a mensagem para o clipboard
+        print("\nCopiando mensagem para clipboard...")
+        subprocess.run(['osascript', '-e', f'set the clipboard to "{message}"'], check=True)
+        time.sleep(0.5)
+
+        # 6. Colar a mensagem
         print("\nColando mensagem...")
         pyautogui.hotkey('command', 'v')
         time.sleep(0.5)
 
-        # 6. Pressionar Enter
+        # 7. Pressionar Enter
         print("\nPressionando Enter...")
         pyautogui.press('enter')
         time.sleep(WAIT_BEFORE_SEND_ENTER)
