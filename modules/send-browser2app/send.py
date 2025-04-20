@@ -2,6 +2,7 @@ import webbrowser
 import platform
 import time  # Import the time module
 import pyautogui
+import pygetwindow
 
 number = "5547997676797"
 
@@ -55,20 +56,31 @@ if browser:
         print(f"Attempting to open {url}...")
         if os_name == 'Windows':
             #print a message
-            print("Windows detected")
-            time.sleep(2)
-            #navegate to chrome maybe with tab alt + tab
-            #focus on chrome withouy pyautogui
-            
+            print("Windows detected. Attempting to focus WhatsApp window...")
+            time.sleep(3)  # Wait a bit for WhatsApp to open/respond
 
-            pyautogui.hotkey('alt', 'tab')
-            time.sleep(1)
-            #close one tab with pyautogui ctrl + w
-            #close one tab with pyautogui ctrl + w
-            pyautogui.hotkey('ctrl', 'w')
-            time.sleep(1)
-            #go back to whatsapp app with pyautogui alt + tab
-            pyautogui.hotkey('alt', 'tab')
+            whatsapp_window = None
+            try:
+                # Find the WhatsApp window by title (adjust title if necessary)
+                possible_titles = ["WhatsApp", "WhatsApp Business"]  # Add other possible titles if needed
+                for title in possible_titles:
+                    windows = pygetwindow.getWindowsWithTitle(title)
+                    if windows:
+                        whatsapp_window = windows[0]
+                        print(f"Found WhatsApp window with title: {title}")
+                        break
+                
+                if whatsapp_window:
+                    # Bring the window to the front
+                    if whatsapp_window.isMinimized:
+                        whatsapp_window.restore()
+                    whatsapp_window.activate()
+                    print("WhatsApp window activated.")
+                else:
+                    print("WhatsApp window not found. It might not be running or the title is different.")
+
+            except Exception as e:
+                print(f"Error while trying to focus WhatsApp window: {e}")
 
         if os_name == 'Darwin' or os_name == 'Linux':
             #print a message

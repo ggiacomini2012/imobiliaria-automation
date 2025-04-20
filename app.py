@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, request
 import subprocess
 import sys
 import os
+import platform
 
 app = Flask(__name__)
 
@@ -30,6 +31,7 @@ def dashboard():
 def trigger_single_send():
     script_path = single_send_script_path
     try:
+        # ---- REVERTED TO ORIGINAL subprocess.run CODE ----
         print(f"Attempting to execute single send script: {script_path}")
         python_executable = sys.executable
         print(f"Using Python executable: {python_executable}")
@@ -61,6 +63,7 @@ def trigger_single_send():
 @app.route('/send_messages', methods=['POST'])
 def send_messages():
     data = request.get_json()
+    print(f"Received data in /send_messages: {data}")
     if not data or 'message_template' not in data:
         return jsonify({'success': False, 'status': 'Erro: Template da mensagem não fornecido.', 'output': ''}), 400
 

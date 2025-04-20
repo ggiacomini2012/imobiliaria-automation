@@ -1,8 +1,8 @@
 import platform
 import time  # Import the time module
-# import pyautogui # No longer needed for GUI automation
 import os # Needed for os.startfile on Windows
 import subprocess # Needed for open/xdg-open on macOS/Linux
+import pygetwindow # Add pygetwindow import
 
 number = "5511984013378"
 
@@ -64,6 +64,38 @@ try:
         os.startfile(whatsapp_uri)
         success = True
         print("Windows: Triggered os.startfile.")
+        
+        # ---- Add focus logic ----
+        print("Attempting to focus WhatsApp window...")
+        time.sleep(3) # Wait a bit for WhatsApp to open/respond
+        
+        whatsapp_window = None
+        try:
+            # Find the WhatsApp window by title (adjust title if necessary)
+            possible_titles = ["WhatsApp", "WhatsApp Business"]
+            for title in possible_titles:
+                windows = pygetwindow.getWindowsWithTitle(title)
+                if windows:
+                    whatsapp_window = windows[0]
+                    print(f"Found WhatsApp window with title: {title}")
+                    break
+            
+            if whatsapp_window:
+                # Bring the window to the front
+                if whatsapp_window.isMinimized:
+                    print("Restoring minimized WhatsApp window...")
+                    whatsapp_window.restore()
+                    time.sleep(0.5) # Small delay after restore
+                print("Activating WhatsApp window...")
+                whatsapp_window.activate()
+                print("WhatsApp window activated.")
+            else:
+                print("WhatsApp window not found after startfile. It might not be running, title is different, or it closed quickly.")
+
+        except Exception as e:
+            print(f"Error while trying to focus WhatsApp window: {e}")
+        # ---- End focus logic ----
+            
     elif os_name == 'Darwin': # macOS
         subprocess.run(['open', whatsapp_uri], check=True)
         success = True
