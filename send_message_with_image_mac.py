@@ -4,6 +4,7 @@ import time
 import os
 import subprocess
 import pyautogui
+import pyperclip
 from PIL import Image
 
 # Intervalos (ajuste conforme necessário)
@@ -79,7 +80,7 @@ def send_message_with_image(phone_number, message, image_path):
 
         # 5. Copiar a mensagem para o clipboard
         print("\nCopiando mensagem para clipboard...")
-        subprocess.run(['osascript', '-e', f'set the clipboard to "{message}"'], check=True)
+        pyperclip.copy(message)
         time.sleep(0.5)
 
         # 6. Colar a mensagem
