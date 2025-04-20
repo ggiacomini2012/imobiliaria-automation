@@ -22,7 +22,9 @@ def copy_image_to_clipboard(image_path):
 
     try:
         # Limpar o clipboard antes de copiar a imagem
-        subprocess.run(['osascript', '-e', 'set the clipboard to ""'], check=False)
+        print("Limpando clipboard...")
+        clear_result = subprocess.run(['osascript', '-e', 'set the clipboard to ""'], capture_output=True, text=True, check=False)
+        print(f"Limpeza - stdout: {clear_result.stdout.strip()}, stderr: {clear_result.stderr.strip()}, code: {clear_result.returncode}")
         time.sleep(0.5)
 
         # Copiar imagem para clipboard usando osascript
@@ -33,24 +35,28 @@ def copy_image_to_clipboard(image_path):
             image_type = "GIF picture"
         
         script = f'set the clipboard to (read (POSIX file "{abs_image_path}") as {image_type})'
+        print(f"\nExecutando osascript (tipo específico): {script}")
         result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
+        print(f"Resultado (tipo específico) - stdout: {result.stdout.strip()}, stderr: {result.stderr.strip()}, code: {result.returncode}")
         
         if result.returncode == 0:
-            print("Imagem copiada para clipboard com sucesso.")
+            print("\nImagem copiada para clipboard com sucesso (tipo específico).")
             return True
         else:
-            print("Falha ao copiar como tipo específico, tentando como 'picture' genérico...")
-            script = f'set the clipboard to (read (POSIX file "{abs_image_path}") as picture)'
-            result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
+            print("\nFalha ao copiar como tipo específico, tentando como 'picture' genérico...")
+            script_generic = f'set the clipboard to (read (POSIX file "{abs_image_path}") as picture)'
+            print(f"Executando osascript (genérico): {script_generic}")
+            result_generic = subprocess.run(['osascript', '-e', script_generic], capture_output=True, text=True, check=False)
+            print(f"Resultado (genérico) - stdout: {result_generic.stdout.strip()}, stderr: {result_generic.stderr.strip()}, code: {result_generic.returncode}")
             
-            if result.returncode == 0:
-                print("Imagem copiada para clipboard com sucesso (formato genérico).")
+            if result_generic.returncode == 0:
+                print("\nImagem copiada para clipboard com sucesso (formato genérico).")
                 return True
             else:
-                print(f"Erro ao copiar imagem para clipboard: {result.stderr}")
+                print(f"\nErro final ao copiar imagem para clipboard.")
                 return False
     except Exception as e:
-        print(f"Erro ao copiar imagem para clipboard: {e}")
+        print(f"\nErro EXCEPCIONAL ao copiar imagem para clipboard: {e}")
         return False
 
 def paste_image(image_path):
@@ -67,13 +73,6 @@ def paste_image(image_path):
         # 3. Colar a imagem
         print("\nColando imagem...")
         pyautogui.hotkey('command', 'v')
-        time.sleep(0.5)
-        pyautogui.hotkey('option', 'v')
-        time.sleep(0.5)
-        
-        #osascript paste from clipboard
-        subprocess.run(['osascript', '-e', 'tell application "System Events" to paste from clipboard'], check=False)
-        time.sleep(0.5)
         print("Imagem colada!")
 
         return True
