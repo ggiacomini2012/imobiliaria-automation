@@ -7,7 +7,7 @@ import pyautogui
 from PIL import Image
 
 # Intervalos (ajuste conforme necessário)
-WAIT_AFTER_OPEN = 5.0  # Segundos após abrir o WhatsApp
+WAIT_AFTER_OPEN = 3.0  # Aumentado para dar mais tempo para o WhatsApp abrir
 WAIT_AFTER_PASTE = 3.0  # Segundos após colar imagem
 WAIT_BEFORE_SEND_ENTER = 0.5  # Segundos antes do Enter
 
