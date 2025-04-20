@@ -1,11 +1,12 @@
-# paste_image_final_mac.py - APENAS COPIA PARA CLIPBOARD (via Finder + Cmd+C)
+# paste_image_final_mac.py - Copia via Finder + Cmd+C, Espera e Cola
 import time
 import subprocess
 import os
 from PIL import Image # Ainda útil para verificar a imagem
 import sys
+import pyautogui # Adicionado de volta
 
-def copy_image_to_clipboard_only(image_path):
+def copy_image_via_finder(image_path):
     """Copia imagem para clipboard no macOS via Finder + Cmd+C."""
     abs_image_path = os.path.abspath(image_path)
     if not os.path.exists(abs_image_path):
@@ -56,6 +57,30 @@ delay 0.5 -- Pequena pausa para garantir que a cópia ocorra
         print(f"\nErro EXCEPCIONAL ao copiar imagem para clipboard via Finder: {e}")
         return False
 
+def copy_wait_and_paste(image_path):
+    """Copia via Finder, espera 5s e cola."""
+    # 1. Copiar via Finder
+    if not copy_image_via_finder(image_path):
+        print("Falha ao enviar comando de cópia. Abortando.")
+        return False
+
+    # 2. Esperar 5 segundos
+    print("\nAguardando 5 segundos antes de colar a imagem...")
+    time.sleep(5)
+
+    # 3. Colar a imagem
+    try:
+        print("\nColando imagem (Cmd+V)...")
+        pyautogui.hotkey('command', 'v')
+        print("Comando de colar enviado!")
+        return True
+    except pyautogui.FailSafeException:
+        print("\nFAILSAFE TRIGGERED (mouse no canto). Parando automação GUI.")
+        return False
+    except Exception as e:
+        print(f"\nErro durante a colagem: {e}")
+        return False
+
 # --- Bloco Principal --- 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -64,11 +89,11 @@ if __name__ == "__main__":
 
     img_path_arg = sys.argv[1]
     
-    print("\n--- Iniciando Script de CÓPIA de Imagem (macOS - via Finder Cmd+C) ---")
+    print("\n--- Iniciando Script de CÓPIA (Finder Cmd+C), ESPERA e COLA (macOS) ---")
     print(f"Imagem: {img_path_arg}")
     
-    # Chama a função que APENAS copia via Finder
-    if copy_image_to_clipboard_only(img_path_arg):
-        print("--- Script finalizado: Comando de cópia enviado --- ")
+    # Chama a função que copia, espera e cola
+    if copy_wait_and_paste(img_path_arg):
+        print("--- Script finalizado: Sequência concluída (verifique o resultado) --- ")
     else:
-        print("--- Script finalizado: Falha no comando de cópia --- ") 
+        print("--- Script finalizado: Falha durante a sequência --- ") 
