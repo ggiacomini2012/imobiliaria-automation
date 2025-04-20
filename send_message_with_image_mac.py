@@ -13,14 +13,14 @@ WAIT_AFTER_PASTE = 5.0  # AUMENTADO! Segundos após colar imagem
 WAIT_BEFORE_SEND_ENTER = 0.5  # Segundos antes do Enter
 
 def copy_image_to_clipboard(image_path):
-    """Copia imagem para clipboard no macOS usando o Finder via AppleScript."""
+    """Copia imagem para clipboard no macOS, tentando APENAS 'as picture'."""
     abs_image_path = os.path.abspath(image_path)
     if not os.path.exists(abs_image_path):
         print(f"Erro: Imagem não encontrada em {abs_image_path}")
         return False
 
     try:
-        # Verificar se a imagem é válida (opcional, mas bom ter)
+        # Verificar se a imagem é válida
         with Image.open(abs_image_path) as img:
             print(f"Imagem válida detectada: {img.format} {img.size}")
     except Exception as img_e:
@@ -34,36 +34,24 @@ def copy_image_to_clipboard(image_path):
         print(f"Limpeza - stdout: {clear_result.stdout.strip()}, stderr: {clear_result.stderr.strip()}, code: {clear_result.returncode}")
         time.sleep(0.5)
 
-        # Script AppleScript para copiar via Finder
-        script = f'''
-tell application "Finder"
-    set the_file to POSIX file "{abs_image_path}" as alias
-    select the_file
-    activate
-    tell application "System Events"
-        keystroke "c" using command down
-    end tell
-end tell
-delay 0.5 -- Pequena pausa para garantir que a cópia ocorra
-'''
+        # Tentar copiar APENAS com 'as picture'
+        print("\nTentando copiar como 'picture' genérico...")
+        script_generic = f'set the clipboard to (read (POSIX file "{abs_image_path}") as picture)'
+        print(f"Executando osascript (genérico): {script_generic}")
+        result_generic = subprocess.run(['osascript', '-e', script_generic], capture_output=True, text=True, check=False)
+        print(f"Resultado (genérico) - stdout: {result_generic.stdout.strip()}, stderr: {result_generic.stderr.strip()}, code: {result_generic.returncode}")
         
-        print(f"\nExecutando osascript (via Finder): pedindo para copiar {abs_image_path}")
-        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
-        print(f"Resultado (Finder copy) - stdout: {result.stdout.strip()}, stderr: {result.stderr.strip()}, code: {result.returncode}")
-
-        # Verificar se a cópia foi bem-sucedida é mais difícil aqui.
-        # Vamos assumir sucesso se o script não retornar erro e adicionar uma verificação manual se necessário.
-        if result.returncode == 0:
-            print("\nComando de cópia via Finder enviado com sucesso.")
-            # AQUI PODERÍAMOS tentar ler o clipboard para verificar, mas complica.
-            # Vamos confiar que funcionou por enquanto.
+        if result_generic.returncode == 0:
+            print("\nImagem copiada para clipboard com sucesso (formato genérico).")
+            print("Pausa de 1s após cópia...")
+            time.sleep(1.0) # Pausa extra após a cópia bem-sucedida
             return True
         else:
-            print(f"\nErro ao executar o script de cópia do Finder.")
+            print(f"\nErro final ao copiar imagem para clipboard.")
             return False
             
     except Exception as e:
-        print(f"\nErro EXCEPCIONAL ao copiar imagem para clipboard via Finder: {e}")
+        print(f"\nErro EXCEPCIONAL ao copiar imagem para clipboard: {e}")
         return False
 
 def send_message_with_image(phone_number, message, image_path):
