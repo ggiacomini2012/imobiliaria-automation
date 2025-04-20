@@ -36,11 +36,11 @@ SEND_BUTTON_POS = (700, 650)   # Posição do botão Enviar (seta verde)
 # SEND_BUTTON_IMG = 'gui_images/send_button.png'
 
 # Intervalos (ajuste conforme necessário)
-WAIT_AFTER_OPEN = 10.0  # Aumentado para 10 segundos
-WAIT_AFTER_PASTE = 6.0  # Aumentado para 6 segundos
-WAIT_BEFORE_SEND_ENTER = 1.0  # Aumentado para 1 segundo
-ENTER_ATTEMPTS = 3
-ENTER_INTERVAL = 0.8  # Aumentado intervalo entre Enters
+WAIT_AFTER_OPEN = 5.0  # Reduzido para 5 segundos
+WAIT_AFTER_PASTE = 3.0  # Reduzido para 3 segundos
+WAIT_BEFORE_SEND_ENTER = 0.5  # Reduzido para 0.5 segundo
+ENTER_ATTEMPTS = 2  # Reduzido para 2 tentativas
+ENTER_INTERVAL = 0.5  # Reduzido para 0.5 segundos
 # -------------------------------------------------
 
 # --- Funções de Clipboard ---
@@ -73,7 +73,7 @@ def copy_image_windows(image_path):
         return False
 
 def copy_image_macos(image_path):
-    """Copia imagem para clipboard no macOS usando AppleScript."""
+    """Copia imagem para clipboard no macOS usando osascript."""
     abs_image_path = os.path.abspath(image_path)
     if not os.path.exists(abs_image_path):
          print(f"Erro (Mac Clipboard): Imagem não encontrada em {abs_image_path}")
@@ -87,42 +87,34 @@ def copy_image_macos(image_path):
             print(f"Aviso: Erro ao verificar imagem: {img_e}")
             return False
 
-        image_type = "JPEG picture"
-        if abs_image_path.lower().endswith(".png"): 
-            image_type = "PNG picture"
-        elif abs_image_path.lower().endswith(".gif"): 
-            image_type = "GIF picture"
-        
-        print(f"Tentando copiar como {image_type}...")
-        script = f'set the clipboard to (read (POSIX file "{abs_image_path}") as {image_type})'
+        # Novo método usando pbcopy
+        try:
+            print("Tentando copiar imagem usando pbcopy...")
+            with open(abs_image_path, 'rb') as f:
+                subprocess.run(['pbcopy', 'i'], input=f.read(), check=True)
+            print("Imagem copiada para clipboard usando pbcopy.")
+            return True
+        except Exception as pb_e:
+            print(f"Erro ao usar pbcopy: {pb_e}")
+
+        # Se pbcopy falhar, tenta o método original do AppleScript
+        print("Tentando método alternativo com AppleScript...")
+        script = f'''
+        set theImage to (POSIX file "{abs_image_path}")
+        set theData to (read theImage as data)
+        set the clipboard to theData
+        '''
         result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
         
         if result.returncode == 0:
-            print("Imagem copiada para clipboard (macOS).")
-            # Tenta verificar se algo foi copiado
-            verify_script = 'get the clipboard'
-            verify_result = subprocess.run(['osascript', '-e', verify_script], capture_output=True, text=True, check=False)
-            if verify_result.returncode == 0:
-                print("Clipboard contém dados após cópia.")
-                return True
-            else:
-                print("Aviso: Clipboard parece vazio após cópia.")
-        
-        print("Falha ao copiar como tipo específico, tentando como 'picture' genérico...")
-        script = f'set the clipboard to (read (POSIX file "{abs_image_path}") as picture)'
-        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
-        
-        if result.returncode == 0:
-             print("Imagem copiada para clipboard (macOS - genérico).")
-             return True
+            print("Imagem copiada para clipboard via AppleScript.")
+            return True
         else:
-             print(f"Erro ao copiar imagem para clipboard (macOS): {result.stderr}")
-             return False
-    except FileNotFoundError: 
-        print("Erro: Comando 'osascript' não encontrado. Necessário para clipboard no macOS.")
-        return False
+            print(f"Erro ao copiar imagem: {result.stderr}")
+            return False
+
     except Exception as e:
-        print(f"Erro inesperado ao copiar imagem para clipboard (macOS): {e}")
+        print(f"Erro inesperado ao copiar imagem para clipboard: {e}")
         return False
 
 def copy_image_to_clipboard(image_path):
@@ -174,18 +166,13 @@ def send_whatsapp_image_no_clicks(phone_number, image_path, caption):
 
         # --- Colar a imagem ---
         print("\nColando imagem do clipboard (Cmd+V)...")
-        # Tenta verificar clipboard antes de colar
-        verify_script = 'get the clipboard'
-        verify_result = subprocess.run(['osascript', '-e', verify_script], capture_output=True, text=True, check=False)
-        if verify_result.returncode == 0:
-            print("Clipboard contém dados antes de colar.")
-        else:
-            print("Aviso: Clipboard parece vazio antes de colar!")
-
-        # macOS specific paste command
+        # Tenta colar duas vezes com um pequeno intervalo
         paste_command = ('command', 'v')
         pyautogui.hotkey(*paste_command)
-        print("Comando de colar enviado.")
+        time.sleep(0.5)
+        print("Tentando segunda colagem...")
+        pyautogui.hotkey(*paste_command)
+        print("Comandos de colar enviados.")
         print(f"Aguardando {WAIT_AFTER_PASTE} segundos para a imagem carregar...")
         time.sleep(WAIT_AFTER_PASTE)
 
