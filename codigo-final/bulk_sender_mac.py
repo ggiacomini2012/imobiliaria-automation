@@ -136,79 +136,54 @@ if __name__ == "__main__":
                 fail_count += 1
             # -----------------------------------------
         else:
-            # --- Send Text Only (Current Method) ---
-            print("Attempting to send text only...")
-            # URL-encode the message for the URI
+            # --- Send Text Only (macOS adaptation) ---
+            print("Attempting to send text only (macOS)...")
             encoded_message = urllib.parse.quote(formatted_message)
-            # Construct the WhatsApp URI
             whatsapp_uri = f"whatsapp://send?phone={phone_number}&text={encoded_message}"
 
-            # Attempt to open the URI
             if open_uri(whatsapp_uri):
-                paste_failed = False # Flag para rastrear falha no paste
-                # --- Focus Script (Windows Only) ---
-                if platform.system() == 'Windows':
-                    print("--- Running Focus Script (Windows Only) ---")
+                # Wait for WhatsApp to open and potentially load the chat
+                wait_after_uri_open_seconds = 5.0 # Adjust if needed
+                print(f"Waiting {wait_after_uri_open_seconds} seconds for WhatsApp to open...")
+                time.sleep(wait_after_uri_open_seconds)
+
+                # Attempt to press Enter multiple times for reliability
+                enter_attempts = 3
+                enter_interval_seconds = 0.5 # Adjust if needed
+                send_success = False
+                print(f"Attempting to press Enter {enter_attempts} times...")
+                for attempt in range(enter_attempts):
                     try:
-                        focus_result = subprocess.run(
-                            [sys.executable, focus_script_path],
-                            capture_output=True, text=True, check=False, encoding='utf-8', errors='replace',
-                            cwd=parent_dir
-                        )
-                        print(f"Focus Script Output:\n--- stdout ---\n{focus_result.stdout}\n--- stderr ---\n{focus_result.stderr}")
-                        if focus_result.returncode == 0:
-                            print("Focus script executed successfully.")
-                        else:
-                            print(f"Warning: Focus script failed with exit code {focus_result.returncode}.")
-                    except Exception as focus_e:
-                        print(f"Error executing focus script: {focus_e}")
-                    print("--- End Focus Script ---")
+                        print(f"  Enter attempt {attempt + 1}/{enter_attempts}...")
+                        pyautogui.press('enter')
+                        print("  Enter key pressed.")
+                        send_success = True # Assume success if pyautogui doesn't raise an error
+                        # Optional: break here if you are confident one press is enough once it works
+                        # break 
+                    except pyautogui.FailSafeException:
+                         print("FAILSAFE TRIGGERED (moved mouse to corner). Stopping.")
+                         fail_count += 1
+                         send_success = False # Ensure failure is recorded
+                         break # Exit the attempt loop
+                    except Exception as auto_e:
+                        print(f"  Error pressing Enter on attempt {attempt + 1}: {auto_e}")
+                        # Note: This might happen if WhatsApp isn't the active window
+                        # or due to macOS accessibility permission issues.
+                        send_success = False # Mark as failed for this attempt
+
+                    if attempt < enter_attempts - 1: # Don't sleep after the last attempt
+                         time.sleep(enter_interval_seconds)
+                
+                if send_success:
+                     print("Successfully sent Enter command(s).")
+                     success_count += 1
                 else:
-                    print("Skipping focus script execution (Not on Windows).")
-                # --- End Focus Script Section ---
-                
-                # # --- Wait for WhatsApp window to become active ---
-                # print("Waiting for WhatsApp window to become active (max 5 seconds)...")
-                # whatsapp_activated = False
-                # max_wait_time = 5 # seconds
-                # start_wait_time = time.time()
-                
-                # while time.time() - start_wait_time < max_wait_time:
-                #     try:
-                #         active_window = gw.getActiveWindow()
-                #         if active_window and active_window.title and "WhatsApp" in active_window.title:
-                #             print("WhatsApp window is active!")
-                #             whatsapp_activated = True
-                #             break
-                #         else:
-                #             pass
-                #     except Exception as gw_e:
-                #         print(f"Error checking active window: {gw_e}")
-                #     time.sleep(0.5)
-                
-                # if not whatsapp_activated:
-                #      print("Warning: WhatsApp window did not become active within the time limit.")
-                # # --- End Wait Section ---
-                
-                # # Try to press Enter ONLY if WhatsApp window was detected as active
-                # if whatsapp_activated:
-                #     try:
-                #         print("Attempting to press Enter...")
-                #         pyautogui.press('enter')
-                #         print("Enter key pressed.")
-                #         # Contar sucesso APENAS se a colagem não falhou (se tentada)
-                #         if not paste_failed:
-                #             success_count += 1
-                #         else:
-                #             print("Enter pressionado, mas colagem da imagem falhou anteriormente.")
-                #             fail_count += 1
-                #     except Exception as auto_e:
-                #         print(f"Error pressing Enter: {auto_e}")
-                #         fail_count += 1 
-                # else:
-                #     print("Skipping Enter press because WhatsApp window was not confirmed active.")
-                #     fail_count += 1 
+                     print("Failed to reliably send Enter command.")
+                     fail_count += 1
+                # Removed focus script call and pygetwindow active check
+
             else: # open_uri failed
+                print("Failed to open WhatsApp URI.")
                 fail_count += 1
             # -------------------------------------
 
