@@ -67,6 +67,13 @@ def paste_image(image_path):
         # 3. Colar a imagem
         print("\nColando imagem...")
         pyautogui.hotkey('command', 'v')
+        time.sleep(0.5)
+        pyautogui.hotkey('option', 'v')
+        time.sleep(0.5)
+        
+        #osascript paste from clipboard
+        subprocess.run(['osascript', '-e', 'tell application "System Events" to paste from clipboard'], check=False)
+        time.sleep(0.5)
         print("Imagem colada!")
 
         return True
