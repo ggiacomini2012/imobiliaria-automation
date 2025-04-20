@@ -2,62 +2,82 @@
 import platform
 import time
 import os
-import subprocess
+# import subprocess # Não mais necessário para copiar imagem
 import pyautogui
 import pyperclip
 from PIL import Image
 
+# PyObjC imports
+try:
+    from AppKit import NSPasteboard, NSImage, NSPasteboardTypeTIFF, NSApplication # Adicionado NSApplication
+    from Foundation import NSURL
+except ImportError:
+    print("Erro: PyObjC não está instalado corretamente. Instale com:")
+    print("pip install pyobjc-core pyobjc-framework-Cocoa")
+    # sys.exit(1) # Comentado para não parar o script se já estiver rodando
+    pass
+
 # Intervalos (ajuste conforme necessário)
 WAIT_AFTER_OPEN = 7.0  # Segundos após abrir o WhatsApp
-WAIT_AFTER_PASTE = 3.0  # Segundos após colar imagem
+WAIT_AFTER_PASTE = 5.0  # AUMENTADO! Segundos após colar imagem
 WAIT_BEFORE_SEND_ENTER = 0.5  # Segundos antes do Enter
 
 def copy_image_to_clipboard(image_path):
-    """Copia imagem para clipboard no macOS."""
+    """Copia imagem para clipboard no macOS usando PyObjC (NSPasteboard)."""
     abs_image_path = os.path.abspath(image_path)
     if not os.path.exists(abs_image_path):
         print(f"Erro: Imagem não encontrada em {abs_image_path}")
         return False
 
     try:
-        # Verificar se a imagem é válida
-        with Image.open(abs_image_path) as img:
-            print(f"Imagem válida detectada: {img.format} {img.size}")
-    except Exception as img_e:
-        print(f"Erro ao verificar imagem: {img_e}")
-        return False
-
-    try:
-        # Limpar o clipboard antes de copiar a imagem
-        subprocess.run(['osascript', '-e', 'set the clipboard to ""'], check=False)
-        time.sleep(0.5)
-
-        # Copiar imagem para clipboard usando osascript
-        image_type = "JPEG picture"
-        if abs_image_path.lower().endswith(".png"): 
-            image_type = "PNG picture"
-        elif abs_image_path.lower().endswith(".gif"): 
-            image_type = "GIF picture"
+        # Tentar carregar a imagem com NSImage
+        # Inicializa NSApplication se ainda não foi inicializado (necessário para NSImage)
+        NSApplication.sharedApplication()
         
-        script = f'set the clipboard to (read (POSIX file "{abs_image_path}") as {image_type})'
-        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
+        print(f"Tentando carregar imagem com NSImage: {abs_image_path}")
+        ns_image = NSImage.alloc().initWithContentsOfFile_(abs_image_path)
         
-        if result.returncode == 0:
-            print("Imagem copiada para clipboard com sucesso.")
+        if ns_image is None:
+            print(f"Erro (PyObjC): Não foi possível carregar a imagem {abs_image_path} com NSImage.")
+            return False
+            
+        print(f"Imagem carregada com NSImage. Tamanho: {ns_image.size()}")
+
+        # Obter o pasteboard geral
+        pasteboard = NSPasteboard.generalPasteboard()
+        if pasteboard is None:
+            print("Erro (PyObjC): Não foi possível acessar NSPasteboard.generalPasteboard().")
+            return False
+            
+        # Limpar o pasteboard
+        print("Limpando NSPasteboard...")
+        pasteboard.clearContents()
+        
+        # Obter dados TIFF da imagem (formato comum para imagens no clipboard do Mac)
+        tiff_data = ns_image.TIFFRepresentation()
+        if tiff_data is None:
+             print("Erro (PyObjC): Não foi possível obter TIFFRepresentation da imagem.")
+             return False
+
+        # Escrever os dados no pasteboard
+        print("Escrevendo dados TIFF no NSPasteboard...")
+        wrote_ok = pasteboard.setData_forType_(tiff_data, NSPasteboardTypeTIFF)
+        
+        if wrote_ok:
+            print("Imagem copiada para clipboard com sucesso (via PyObjC).")
+            time.sleep(0.5) # Pequena pausa
             return True
         else:
-            print("Falha ao copiar como tipo específico, tentando como 'picture' genérico...")
-            script = f'set the clipboard to (read (POSIX file "{abs_image_path}") as picture)'
-            result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
+            print("Erro (PyObjC): Falha ao escrever dados no NSPasteboard.")
+            return False
             
-            if result.returncode == 0:
-                print("Imagem copiada para clipboard com sucesso (formato genérico).")
-                return True
-            else:
-                print(f"Erro ao copiar imagem para clipboard: {result.stderr}")
-                return False
+    except NameError: # Caso PyObjC não esteja carregado
+         print("Erro Fatal: PyObjC não parece estar instalado ou importado corretamente.")
+         return False
     except Exception as e:
-        print(f"Erro ao copiar imagem para clipboard: {e}")
+        print(f"Erro EXCEPCIONAL ao copiar imagem para clipboard via PyObjC: {e}")
+        import traceback
+        print(traceback.format_exc()) # Imprimir traceback para depuração
         return False
 
 def send_message_with_image(phone_number, message, image_path):
