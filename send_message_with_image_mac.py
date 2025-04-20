@@ -28,6 +28,10 @@ def copy_image_to_clipboard(image_path):
         return False
 
     try:
+        # Limpar o clipboard antes de copiar a imagem
+        subprocess.run(['osascript', '-e', 'set the clipboard to ""'], check=False)
+        time.sleep(0.5)
+
         # Copiar imagem para clipboard usando osascript
         image_type = "JPEG picture"
         if abs_image_path.lower().endswith(".png"): 
@@ -78,8 +82,10 @@ def send_message_with_image(phone_number, message, image_path):
         print(f"Aguardando {WAIT_AFTER_PASTE} segundos para a imagem carregar...")
         time.sleep(WAIT_AFTER_PASTE)
 
-        # 5. Copiar a mensagem para o clipboard
+        # 5. Limpar o clipboard e copiar a mensagem
         print("\nCopiando mensagem para clipboard...")
+        subprocess.run(['osascript', '-e', 'set the clipboard to ""'], check=False)
+        time.sleep(0.5)
         pyperclip.copy(message)
         time.sleep(0.5)
 
