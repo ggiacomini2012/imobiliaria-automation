@@ -1,189 +1,127 @@
-#!/usr/bin/env python3
-# sudoiamge_mac.py - Script para enviar imagem para WhatsApp no macOS
-# Baseado no send-back_mac.py, com funcionalidade de imagem adicionada
-
 import platform
-import time
-import os
-import subprocess
-import pyautogui
-from PIL import Image
-import sys
+import time  # Import the time module
+import os # Needed for os.startfile on Windows
+import subprocess # Needed for open/xdg-open on macOS/Linux
+import pygetwindow # Add pygetwindow import
 
-print("\n=== EXECUTANDO: sudoiamge_mac.py ===\n")
+print("\n=== EXECUTANDO: modules/send-browser2app/send-back_mac.py ===\n")
 
-# Intervalos (ajuste conforme necessário)
-WAIT_AFTER_OPEN = 7.0  # Segundos após abrir o WhatsApp
-WAIT_AFTER_PASTE = 5.0  # Segundos após colar imagem
-WAIT_BEFORE_SEND_ENTER = 0.5  # Segundos antes do Enter
+number = "5511984013378"
 
-def copy_with_preview(image_path):
-    """Copia imagem para clipboard abrindo no Preview e usando Command+C."""
-    abs_image_path = os.path.abspath(image_path)
-    if not os.path.exists(abs_image_path):
-        print(f"Erro: Arquivo de imagem não encontrado: {abs_image_path}")
-        return False
+# Construct the direct WhatsApp URI instead of the web URL
+# Note: We are omitting the text part for now, add &text=your_message if needed
+whatsapp_uri = f"whatsapp://send?phone={number}"
+# url = f"https://api.whatsapp.com/send/?phone={number}&text&type=phone_number&app_absent=0" # Old web URL
+# browser = None # No longer needed
+os_name = platform.system()
+
+print(f"Detected OS: {os_name}")
+
+# Remove browser detection logic
+# if os_name == 'Windows':
+#     # Try common Windows path first
+#     try:
+#         chrome_path_windows = 'C:/Program Files/Google/Chrome/Application/chrome.exe %s'
+#         browser = webbrowser.get(chrome_path_windows)
+#         print(f"Found browser using path: {chrome_path_windows}")
+#     except webbrowser.Error as e:
+#         print(f"Could not find browser using path {chrome_path_windows}. Error: {e}")
+#         # Fallback to trying the name 'chrome' on Windows
+#         try:
+#             browser = webbrowser.get('chrome')
+#             print("Found browser using name: 'chrome'")
+#         except webbrowser.Error as e2:
+#             print(f"Could not find browser using name 'chrome'. Error: {e2}")
+# 
+# elif os_name == 'Darwin' or os_name == 'Linux':
+#     # Try common names for macOS/Linux
+#     browser_names = ['chrome', 'google-chrome', 'chromium']
+#     for name in browser_names:
+#         try:
+#             browser = webbrowser.get(name)
+#             print(f"Found browser using name: {name}")
+#             break
+#         except webbrowser.Error:
+#             print(f"Could not find browser using name: {name}")
+#             continue
+# else:
+#     # Fallback for other OSes (try default behavior)
+#     print(f"Unsupported OS ({os_name}) for specific browser detection. Trying default.")
+#     try:
+#         browser = webbrowser.get()
+#         print("Using default system browser.")
+#     except webbrowser.Error as e:
+#         print(f"Could not get default browser. Error: {e}")
+
+
+# Open the URL if a browser was found --- Now directly try opening the URI ---
+# if browser: # Remove browser check
+# ... existing code ...
+
+# Attempt to open the WhatsApp URI directly using the OS handler
+success = False
+try:
+    print(f"Attempting to open WhatsApp URI: {whatsapp_uri}")
+    if os_name == 'Windows':
+        os.startfile(whatsapp_uri)
+        success = True
+        print("Windows: Triggered os.startfile.")
         
-    try:
-        # 1. Abrir a imagem no Preview
-        print(f"Abrindo imagem no Preview: {abs_image_path}")
-        result_open = subprocess.run(['open', '-a', 'Preview', abs_image_path], 
-                                   capture_output=True, text=True, check=False)
+        # ---- Add focus logic ----
+        print("Attempting to focus WhatsApp window...")
+        time.sleep(3) # Wait a bit for WhatsApp to open/respond
         
-        if result_open.returncode != 0:
-            print(f"Erro ao abrir imagem no Preview: {result_open.stderr}")
-            return False
+        whatsapp_window = None
+        try:
+            # Find the WhatsApp window by title (adjust title if necessary)
+            possible_titles = ["WhatsApp", "WhatsApp Business"]
+            for title in possible_titles:
+                windows = pygetwindow.getWindowsWithTitle(title)
+                if windows:
+                    whatsapp_window = windows[0]
+                    print(f"Found WhatsApp window with title: {title}")
+                    break
             
-        # 2. Esperar o Preview abrir
-        print("Aguardando 2 segundos para o Preview abrir...")
-        time.sleep(2.0)
-        
-        # 3. Selecionar tudo (Command+A)
-        print("Enviando Command+A para selecionar tudo...")
-        select_script = '''
-        tell application "System Events"
-            tell process "Preview"
-                keystroke "a" using command down
-            end tell
-        end tell
-        '''
-        result_select = subprocess.run(['osascript', '-e', select_script], 
-                                     capture_output=True, text=True, check=False)
-        
-        if result_select.returncode != 0:
-            print(f"Erro ao enviar Command+A: {result_select.stderr}")
-            return False
-            
-        time.sleep(0.5)
-        
-        # 4. Copiar (Command+C)
-        print("Enviando Command+C para copiar...")
-        copy_script = '''
-        tell application "System Events"
-            tell process "Preview"
-                keystroke "c" using command down
-            end tell
-        end tell
-        '''
-        result_copy = subprocess.run(['osascript', '-e', copy_script], 
-                                    capture_output=True, text=True, check=False)
-        
-        if result_copy.returncode != 0:
-            print(f"Erro ao enviar Command+C: {result_copy.stderr}")
-            return False
-            
-        time.sleep(0.5)
-        
-        # 5. Fechar Preview (Command+W)
-        print("Enviando Command+W para fechar...")
-        close_script = '''
-        tell application "System Events"
-            tell process "Preview"
-                keystroke "w" using command down
-            end tell
-        end tell
-        '''
-        result_close = subprocess.run(['osascript', '-e', close_script], 
-                                     capture_output=True, text=True, check=False)
-        
-        # Não verificamos o resultado do fechamento, pois pode haver diálogo
-        # perguntando se quer salvar, etc.
-        
-        # 6. Pressionando Esc para cancelar qualquer diálogo
-        cancel_script = '''
-        tell application "System Events"
-            key code 53  # Código para a tecla Esc
-        end tell
-        '''
-        subprocess.run(['osascript', '-e', cancel_script], 
-                      capture_output=True, text=True, check=False)
-                      
-        print("Sequência de comando para copiar via Preview concluída.")
-        return True
-        
-    except Exception as e:
-        print(f"Erro durante o processo: {e}")
-        return False
+            if whatsapp_window:
+                # Bring the window to the front
+                if whatsapp_window.isMinimized:
+                    print("Restoring minimized WhatsApp window...")
+                    whatsapp_window.restore()
+                    time.sleep(0.5) # Small delay after restore
+                print("Activating WhatsApp window...")
+                whatsapp_window.activate()
+                print("WhatsApp window activated.")
+            else:
+                print("WhatsApp window not found after startfile. It might not be running, title is different, or it closed quickly.")
 
-def open_whatsapp_with_number(phone_number, message=None):
-    """Abre o WhatsApp com o número especificado."""
-    os_name = platform.system()
-    
-    if os_name != 'Darwin':  # Só funciona em macOS
-        print(f"Este script é específico para macOS, mas foi detectado: {os_name}")
-        return False
-    
-    # Construir a URI do WhatsApp
-    whatsapp_uri = f"whatsapp://send?phone={phone_number}"
-    if message:
-        import urllib.parse
-        encoded_message = urllib.parse.quote(message)
-        whatsapp_uri += f"&text={encoded_message}"
-    
-    try:
-        print(f"Tentando abrir URI do WhatsApp: {whatsapp_uri}")
+        except Exception as e:
+            print(f"Error while trying to focus WhatsApp window: {e}")
+        # ---- End focus logic ----
+            
+    elif os_name == 'Darwin': # macOS
         subprocess.run(['open', whatsapp_uri], check=True)
-        print("Comando 'open' executado com sucesso.")
-        return True
-    except Exception as e:
-        print(f"Erro ao abrir URI do WhatsApp: {e}")
-        return False
-
-def send_image_to_whatsapp(phone_number, image_path):
-    """Envia imagem para o WhatsApp no macOS."""
-    try:
-        # 1. Copiar imagem para clipboard com Preview
-        print("\n--- Etapa 1: Copiar imagem para clipboard ---")
-        if not copy_with_preview(image_path):
-            print("Falha ao copiar imagem. Abortando.")
-            return False
-        
-        # 2. Abrir WhatsApp com o número
-        print("\n--- Etapa 2: Abrir WhatsApp ---")
-        if not open_whatsapp_with_number(phone_number):
-            print("Falha ao abrir WhatsApp. Abortando.")
-            return False
-        
-        # 3. Esperar WhatsApp abrir
-        print(f"\n--- Etapa 3: Aguardar {WAIT_AFTER_OPEN}s para WhatsApp abrir ---")
-        time.sleep(WAIT_AFTER_OPEN)
-        
-        # 4. Colar a imagem
-        print("\n--- Etapa 4: Colar imagem ---")
-        print("Colando imagem (Command+V)...")
-        pyautogui.hotkey('command', 'v')
-        
-        # 5. Esperar imagem carregar e pressionar Enter
-        print(f"Aguardando {WAIT_AFTER_PASTE}s para imagem carregar...")
-        time.sleep(WAIT_AFTER_PASTE)
-        print("\n--- Etapa 5: Enviar imagem (Enter) ---")
-        pyautogui.press('enter')
-        time.sleep(WAIT_BEFORE_SEND_ENTER)
-        
-        print("\nSequência de automação finalizada com sucesso.")
-        return True
-        
-    except Exception as e:
-        print(f"Erro durante o processo: {e}")
-        return False
-
-# Bloco principal
-if __name__ == "__main__":
-    # Verificar argumentos
-    if len(sys.argv) != 3:
-        print("Uso: python sudoiamge_mac.py <número_telefone> <caminho_imagem>")
-        sys.exit(1)
-    
-    phone_number = sys.argv[1]
-    image_path = sys.argv[2]
-    
-    print(f"\n--- Iniciando envio de imagem para WhatsApp (macOS) ---")
-    print(f"Número: {phone_number}")
-    print(f"Imagem: {image_path}")
-    
-    if send_image_to_whatsapp(phone_number, image_path):
-        print("--- Envio de imagem concluído com sucesso ---")
-        sys.exit(0)
+        success = True
+        print("macOS: Triggered 'open' command.")
+    elif os_name == 'Linux':
+        subprocess.run(['xdg-open', whatsapp_uri], check=True)
+        success = True
+        print("Linux: Triggered 'xdg-open' command.")
     else:
-        print("--- Falha no envio de imagem ---")
-        sys.exit(1) 
+        print(f"Unsupported OS ({os_name}) for direct URI opening.")
+
+    if success:
+        print("Successfully triggered WhatsApp URI handler.")
+        # Optional: Add a small delay if the subsequent script relies on WhatsApp being open
+        # time.sleep(2) 
+
+except FileNotFoundError: # Handle case where 'open' or 'xdg-open' isn't found
+    print(f"Error: Command required for opening URI not found.")
+    print("Please ensure the necessary command (open/xdg-open) is in your PATH.")
+except subprocess.CalledProcessError as e: # Handle errors from subprocess.run
+     print(f"Error running command to open URI: {e}")
+except Exception as e: # Catch other potential errors (e.g., no handler for whatsapp://)
+    print(f"Error opening WhatsApp URI: {e}")
+    print("Please ensure WhatsApp is installed and registered to handle whatsapp:// links.")
+
+
+print(f"Script finished on OS: {os_name}") 
