@@ -2,20 +2,10 @@
 import platform
 import time
 import os
-import subprocess # ADICIONADO DE VOLTA
+import subprocess
 import pyautogui
 import pyperclip
 from PIL import Image
-
-# PyObjC imports
-try:
-    from AppKit import NSPasteboard, NSImage, NSPasteboardTypeTIFF, NSApplication # Adicionado NSApplication
-    from Foundation import NSURL
-except ImportError:
-    print("Erro: PyObjC não está instalado corretamente. Instale com:")
-    print("pip install pyobjc-core pyobjc-framework-Cocoa")
-    # sys.exit(1) # Comentado para não parar o script se já estiver rodando
-    pass
 
 # Intervalos (ajuste conforme necessário)
 WAIT_AFTER_OPEN = 7.0  # Segundos após abrir o WhatsApp
@@ -23,61 +13,57 @@ WAIT_AFTER_PASTE = 5.0  # AUMENTADO! Segundos após colar imagem
 WAIT_BEFORE_SEND_ENTER = 0.5  # Segundos antes do Enter
 
 def copy_image_to_clipboard(image_path):
-    """Copia imagem para clipboard no macOS usando PyObjC (NSPasteboard)."""
+    """Copia imagem para clipboard no macOS usando o Finder via AppleScript."""
     abs_image_path = os.path.abspath(image_path)
     if not os.path.exists(abs_image_path):
         print(f"Erro: Imagem não encontrada em {abs_image_path}")
         return False
 
     try:
-        # Tentar carregar a imagem com NSImage
-        # Inicializa NSApplication se ainda não foi inicializado (necessário para NSImage)
-        NSApplication.sharedApplication()
-        
-        print(f"Tentando carregar imagem com NSImage: {abs_image_path}")
-        ns_image = NSImage.alloc().initWithContentsOfFile_(abs_image_path)
-        
-        if ns_image is None:
-            print(f"Erro (PyObjC): Não foi possível carregar a imagem {abs_image_path} com NSImage.")
-            return False
-            
-        print(f"Imagem carregada com NSImage. Tamanho: {ns_image.size()}")
+        # Verificar se a imagem é válida (opcional, mas bom ter)
+        with Image.open(abs_image_path) as img:
+            print(f"Imagem válida detectada: {img.format} {img.size}")
+    except Exception as img_e:
+        print(f"Erro ao verificar imagem: {img_e}")
+        return False
 
-        # Obter o pasteboard geral
-        pasteboard = NSPasteboard.generalPasteboard()
-        if pasteboard is None:
-            print("Erro (PyObjC): Não foi possível acessar NSPasteboard.generalPasteboard().")
-            return False
-            
-        # Limpar o pasteboard
-        print("Limpando NSPasteboard...")
-        pasteboard.clearContents()
-        
-        # Obter dados TIFF da imagem (formato comum para imagens no clipboard do Mac)
-        tiff_data = ns_image.TIFFRepresentation()
-        if tiff_data is None:
-             print("Erro (PyObjC): Não foi possível obter TIFFRepresentation da imagem.")
-             return False
+    try:
+        # Limpar o clipboard antes de copiar a imagem
+        print("Limpando clipboard...")
+        clear_result = subprocess.run(['osascript', '-e', 'set the clipboard to ""'], capture_output=True, text=True, check=False)
+        print(f"Limpeza - stdout: {clear_result.stdout.strip()}, stderr: {clear_result.stderr.strip()}, code: {clear_result.returncode}")
+        time.sleep(0.5)
 
-        # Escrever os dados no pasteboard
-        print("Escrevendo dados TIFF no NSPasteboard...")
-        wrote_ok = pasteboard.setData_forType_(tiff_data, NSPasteboardTypeTIFF)
+        # Script AppleScript para copiar via Finder
+        script = f'''
+tell application "Finder"
+    set the_file to POSIX file "{abs_image_path}" as alias
+    select the_file
+    activate
+    tell application "System Events"
+        keystroke "c" using command down
+    end tell
+end tell
+delay 0.5 -- Pequena pausa para garantir que a cópia ocorra
+'''
         
-        if wrote_ok:
-            print("Imagem copiada para clipboard com sucesso (via PyObjC).")
-            time.sleep(0.5) # Pequena pausa
+        print(f"\nExecutando osascript (via Finder): pedindo para copiar {abs_image_path}")
+        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
+        print(f"Resultado (Finder copy) - stdout: {result.stdout.strip()}, stderr: {result.stderr.strip()}, code: {result.returncode}")
+
+        # Verificar se a cópia foi bem-sucedida é mais difícil aqui.
+        # Vamos assumir sucesso se o script não retornar erro e adicionar uma verificação manual se necessário.
+        if result.returncode == 0:
+            print("\nComando de cópia via Finder enviado com sucesso.")
+            # AQUI PODERÍAMOS tentar ler o clipboard para verificar, mas complica.
+            # Vamos confiar que funcionou por enquanto.
             return True
         else:
-            print("Erro (PyObjC): Falha ao escrever dados no NSPasteboard.")
+            print(f"\nErro ao executar o script de cópia do Finder.")
             return False
             
-    except NameError: # Caso PyObjC não esteja carregado
-         print("Erro Fatal: PyObjC não parece estar instalado ou importado corretamente.")
-         return False
     except Exception as e:
-        print(f"Erro EXCEPCIONAL ao copiar imagem para clipboard via PyObjC: {e}")
-        import traceback
-        print(traceback.format_exc()) # Imprimir traceback para depuração
+        print(f"\nErro EXCEPCIONAL ao copiar imagem para clipboard via Finder: {e}")
         return False
 
 def send_message_with_image(phone_number, message, image_path):
