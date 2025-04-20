@@ -8,15 +8,17 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 cd "$SCRIPT_DIR" || exit 1 # Sai se o diretório não puder ser acessado
 
 # Executa o servidor Flask usando python3
-echo "Iniciando o servidor Flask (app.py)..."
+#executa run_server.py
+
+echo "Iniciando o servidor Flask (run_server.py)..."
 echo "Diretório atual: $(pwd)"
-echo "Executando: python3 app.py"
+echo "Executando: python3 run_server.py"
 echo "-----------------------------------------"
 
 # Certifique-se de que 'python3' aponta para a instalação correta do Python,
 # especialmente se você usa ambientes virtuais (venv, conda, etc.).
-# Se necessário, ative seu ambiente virtual aqui antes de executar app.py.
-python3 app.py
+# Se necessário, ative seu ambiente virtual aqui antes de executar run_server.py.
+python3 run_server.py
 
 # O servidor Flask manterá o terminal aberto. Pressione Ctrl+C no terminal para parar.
 # echo "Servidor encerrado. Pressione Enter para fechar esta janela."
