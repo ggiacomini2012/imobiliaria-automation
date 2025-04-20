@@ -133,36 +133,52 @@ if __name__ == "__main__":
 
         # --- Decide sending method ---
         if image_path:
-            # --- Send with Image (via GUI Script) ---
-            print(f"Attempting to send image via GUI script...")
-            print(f"  To: {phone_number}")
-            print(f"  Image: {image_path}")
-            print(f"  Caption: {formatted_message}")
+            # --- macOS Image Sending via Clipboard ---
+            print("Attempting to send image via clipboard on macOS...")
+            try:
+                # 1. Copy image to clipboard using pbcopy
+                print(f"Copying image to clipboard: {image_path}")
+                # Use AppleScript for more robust file copying to clipboard
+                applescript = f'''
+                set the_image_path to POSIX file "{image_path}"
+                set the clipboard to (read the_image_path as TIFF picture)
+                '''
+                process = subprocess.run(
+                    ['osascript', '-e', applescript],
+                    check=True, capture_output=True, text=True
+                )
+                print("Image copied to clipboard via AppleScript.")
 
-            # Check if NOT macOS before attempting GUI automation
-            if platform.system() != 'Darwin':
-                try:
-                    gui_result = subprocess.run(
-                        [sys.executable, send_image_gui_script_path, phone_number, image_path, formatted_message],
-                        capture_output=True, text=True, check=False, encoding='utf-8', errors='replace',
-                        cwd=parent_dir
-                    )
-                    print(f"GUI Script Output:\n--- stdout ---\n{gui_result.stdout}\n--- stderr ---\n{gui_result.stderr}")
-                    if gui_result.returncode == 0:
-                        print("GUI script reported success.")
-                        success_count += 1
-                    else:
-                        print(f"GUI script reported failure (exit code {gui_result.returncode}).")
-                        fail_count += 1
-                except FileNotFoundError:
-                    print(f"Error: send_image_gui.py not found at {send_image_gui_script_path}")
+                # 2. Open WhatsApp chat (no text)
+                whatsapp_uri = f"whatsapp://send?phone={phone_number}"
+                if open_uri(whatsapp_uri):
+                    # 3. Wait for WhatsApp to open and focus
+                    print("Waiting for WhatsApp to open (7 seconds)...")
+                    time.sleep(7) # Increased wait time
+
+                    # 4. Paste (Cmd+V)
+                    print("Attempting to paste image (Cmd+V)...")
+                    pyautogui.hotkey('command', 'v')
+                    time.sleep(2) # Wait for paste and caption prompt
+
+                    # 5. Send (Enter) - User might need to add caption manually first
+                    print("Attempting to press Enter to send...")
+                    pyautogui.press('enter')
+                    print("Enter pressed. Image (and potentially caption) should be sent.")
+                    success_count += 1
+                else:
+                    print("Failed to open WhatsApp URI.")
                     fail_count += 1
-                except Exception as gui_e:
-                    print(f"Error running GUI script: {gui_e}")
-                    fail_count += 1
-            else:
-                # On macOS, skip GUI automation
-                print("Skipping image sending via GUI script on macOS (Darwin).")
+
+            except FileNotFoundError:
+                 print(f"Error: 'osascript' command not found. Is this macOS?")
+                 fail_count += 1
+            except subprocess.CalledProcessError as e:
+                print(f"Error copying image to clipboard using AppleScript: {e}")
+                print(f"Stderr: {e.stderr}")
+                fail_count += 1
+            except Exception as e:
+                print(f"An unexpected error occurred during macOS image sending: {e}")
                 fail_count += 1
             # -----------------------------------------
         else:
@@ -215,28 +231,6 @@ if __name__ == "__main__":
                      success_count += 1
                 else: # Mac Enter press was successful
                      success_count += 1
-
-                # # --- Wait for WhatsApp window to become active ---
-                # print("Waiting for WhatsApp window to become active (max 5 seconds)...")
-                
-                # # Try to press Enter ONLY if WhatsApp window was detected as active
-                # if whatsapp_activated:
-                #     try:
-                #         print("Attempting to press Enter...")
-                #         pyautogui.press('enter')
-                #         print("Enter key pressed.")
-                #         # Contar sucesso APENAS se a colagem não falhou (se tentada)
-                #         if not paste_failed:
-                #             success_count += 1
-                #         else:
-                #             print("Enter pressionado, mas colagem da imagem falhou anteriormente.")
-                #             fail_count += 1
-                #     except Exception as auto_e:
-                #         print(f"Error pressing Enter: {auto_e}")
-                #         fail_count += 1 
-                # else:
-                #     print("Skipping Enter press because WhatsApp window was not confirmed active.")
-                #     fail_count += 1 
             else: # open_uri failed
                 fail_count += 1
             # -------------------------------------
