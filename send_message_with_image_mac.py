@@ -2,7 +2,7 @@
 import platform
 import time
 import os
-# import subprocess # Não mais necessário para copiar imagem
+import subprocess # ADICIONADO DE VOLTA
 import pyautogui
 import pyperclip
 from PIL import Image
