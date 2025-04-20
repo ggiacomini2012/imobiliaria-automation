@@ -5,6 +5,8 @@ import os
 import platform
 from werkzeug.utils import secure_filename
 
+print("\n=== EXECUTANDO: app.py ===\n")
+
 app = Flask(__name__)
 
 # Define paths relative to this app.py file

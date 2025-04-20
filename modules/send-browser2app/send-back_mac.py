@@ -4,6 +4,8 @@ import os # Needed for os.startfile on Windows
 import subprocess # Needed for open/xdg-open on macOS/Linux
 import pygetwindow # Add pygetwindow import
 
+print("\n=== EXECUTANDO: modules/send-browser2app/send-back_mac.py ===\n")
+
 number = "5511984013378"
 
 # Construct the direct WhatsApp URI instead of the web URL

@@ -11,6 +11,8 @@ import io
 from PIL import Image # Pillow é necessário
 import pyperclip # Adicionar import
 
+print("\n=== EXECUTANDO: send_image_gui.py ===\n")
+
 # Import específicos do OS
 if platform.system() == 'Windows':
     try:

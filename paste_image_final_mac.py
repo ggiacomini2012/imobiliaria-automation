@@ -6,6 +6,8 @@ from PIL import Image # Ainda útil para verificar a imagem
 import sys
 import pyautogui # Adicionado de volta
 
+print("\n=== EXECUTANDO: paste_image_final_mac.py ===\n")
+
 def copy_image_via_finder(image_path):
     """Copia imagem para clipboard no macOS via Finder + Cmd+C."""
     abs_image_path = os.path.abspath(image_path)

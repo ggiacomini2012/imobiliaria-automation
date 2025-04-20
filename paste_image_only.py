@@ -9,6 +9,8 @@ from PIL import Image
 import pyperclip # Usaremos para copiar/colar a legenda se necessário
 import subprocess
 
+print("\n=== EXECUTANDO: paste_image_only.py ===\n")
+
 # Import específicos do OS para copiar IMAGEM
 if platform.system() == 'Windows':
     try:

@@ -7,6 +7,8 @@ import urllib.parse
 import pyautogui
 import pygetwindow as gw
 
+print("\n=== EXECUTANDO: codigo-final/bulk_sender.py ===\n")
+
 # --- Import custom modules ---
 # Add the parent directory (workspace root) to the Python path
 # to allow importing from 'codigo-final'
