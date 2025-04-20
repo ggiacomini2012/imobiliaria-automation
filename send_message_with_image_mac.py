@@ -1,125 +1,121 @@
+# send_message_with_image_mac.py
 import platform
-import time  # Import the time module
-import os # Needed for os.startfile on Windows
-import subprocess # Needed for open/xdg-open on macOS/Linux
-import pygetwindow # Add pygetwindow import
+import time
+import os
+import subprocess
+import pyautogui
+from PIL import Image
 
-number = "5511984013378"
+# Intervalos (ajuste conforme necessário)
+WAIT_AFTER_OPEN = 3.0  # Aumentado para dar mais tempo para o WhatsApp abrir
+WAIT_AFTER_PASTE = 3.0  # Segundos após colar imagem
+WAIT_BEFORE_SEND_ENTER = 0.5  # Segundos antes do Enter
 
-# Construct the direct WhatsApp URI instead of the web URL
-# Note: We are omitting the text part for now, add &text=your_message if needed
-whatsapp_uri = f"whatsapp://send?phone={number}"
-# url = f"https://api.whatsapp.com/send/?phone={number}&text&type=phone_number&app_absent=0" # Old web URL
-# browser = None # No longer needed
-os_name = platform.system()
+def copy_image_to_clipboard(image_path):
+    """Copia imagem para clipboard no macOS."""
+    abs_image_path = os.path.abspath(image_path)
+    if not os.path.exists(abs_image_path):
+        print(f"Erro: Imagem não encontrada em {abs_image_path}")
+        return False
 
-print(f"Detected OS: {os_name}")
+    try:
+        # Verificar se a imagem é válida
+        with Image.open(abs_image_path) as img:
+            print(f"Imagem válida detectada: {img.format} {img.size}")
+    except Exception as img_e:
+        print(f"Erro ao verificar imagem: {img_e}")
+        return False
 
-# Remove browser detection logic
-# if os_name == 'Windows':
-#     # Try common Windows path first
-#     try:
-#         chrome_path_windows = 'C:/Program Files/Google/Chrome/Application/chrome.exe %s'
-#         browser = webbrowser.get(chrome_path_windows)
-#         print(f"Found browser using path: {chrome_path_windows}")
-#     except webbrowser.Error as e:
-#         print(f"Could not find browser using path {chrome_path_windows}. Error: {e}")
-#         # Fallback to trying the name 'chrome' on Windows
-#         try:
-#             browser = webbrowser.get('chrome')
-#             print("Found browser using name: 'chrome'")
-#         except webbrowser.Error as e2:
-#             print(f"Could not find browser using name 'chrome'. Error: {e2}")
-# 
-# elif os_name == 'Darwin' or os_name == 'Linux':
-#     # Try common names for macOS/Linux
-#     browser_names = ['chrome', 'google-chrome', 'chromium']
-#     for name in browser_names:
-#         try:
-#             browser = webbrowser.get(name)
-#             print(f"Found browser using name: {name}")
-#             break
-#         except webbrowser.Error:
-#             print(f"Could not find browser using name: {name}")
-#             continue
-# else:
-#     # Fallback for other OSes (try default behavior)
-#     print(f"Unsupported OS ({os_name}) for specific browser detection. Trying default.")
-#     try:
-#         browser = webbrowser.get()
-#         print("Using default system browser.")
-#     except webbrowser.Error as e:
-#         print(f"Could not get default browser. Error: {e}")
-
-
-# Open the URL if a browser was found --- Now directly try opening the URI ---
-# if browser: # Remove browser check
-# ... existing code ...
-
-# Attempt to open the WhatsApp URI directly using the OS handler
-success = False
-try:
-    print(f"Attempting to open WhatsApp URI: {whatsapp_uri}")
-    if os_name == 'Windows':
-        os.startfile(whatsapp_uri)
-        success = True
-        print("Windows: Triggered os.startfile.")
+    try:
+        # Copiar imagem para clipboard usando osascript
+        image_type = "JPEG picture"
+        if abs_image_path.lower().endswith(".png"): 
+            image_type = "PNG picture"
+        elif abs_image_path.lower().endswith(".gif"): 
+            image_type = "GIF picture"
         
-        # ---- Add focus logic ----
-        print("Attempting to focus WhatsApp window...")
-        time.sleep(3) # Wait a bit for WhatsApp to open/respond
+        script = f'set the clipboard to (read (POSIX file "{abs_image_path}") as {image_type})'
+        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
         
-        whatsapp_window = None
-        try:
-            # Find the WhatsApp window by title (adjust title if necessary)
-            possible_titles = ["WhatsApp", "WhatsApp Business"]
-            for title in possible_titles:
-                windows = pygetwindow.getWindowsWithTitle(title)
-                if windows:
-                    whatsapp_window = windows[0]
-                    print(f"Found WhatsApp window with title: {title}")
-                    break
+        if result.returncode == 0:
+            print("Imagem copiada para clipboard com sucesso.")
+            return True
+        else:
+            print("Falha ao copiar como tipo específico, tentando como 'picture' genérico...")
+            script = f'set the clipboard to (read (POSIX file "{abs_image_path}") as picture)'
+            result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True, check=False)
             
-            if whatsapp_window:
-                # Bring the window to the front
-                if whatsapp_window.isMinimized:
-                    print("Restoring minimized WhatsApp window...")
-                    whatsapp_window.restore()
-                    time.sleep(0.5) # Small delay after restore
-                print("Activating WhatsApp window...")
-                whatsapp_window.activate()
-                print("WhatsApp window activated.")
+            if result.returncode == 0:
+                print("Imagem copiada para clipboard com sucesso (formato genérico).")
+                return True
             else:
-                print("WhatsApp window not found after startfile. It might not be running, title is different, or it closed quickly.")
+                print(f"Erro ao copiar imagem para clipboard: {result.stderr}")
+                return False
+    except Exception as e:
+        print(f"Erro ao copiar imagem para clipboard: {e}")
+        return False
 
-        except Exception as e:
-            print(f"Error while trying to focus WhatsApp window: {e}")
-        # ---- End focus logic ----
-            
-    elif os_name == 'Darwin': # macOS
+def send_message_with_image(phone_number, message, image_path):
+    """Envia mensagem com imagem no WhatsApp."""
+    try:
+        # 1. Copiar imagem para clipboard
+        if not copy_image_to_clipboard(image_path):
+            return False
+
+        # 2. Abrir WhatsApp com o número
+        whatsapp_uri = f"whatsapp://send?phone={phone_number}"
+        print(f"Abrindo WhatsApp para {phone_number}...")
         subprocess.run(['open', whatsapp_uri], check=True)
-        success = True
-        print("macOS: Triggered 'open' command.")
-    elif os_name == 'Linux':
-        subprocess.run(['xdg-open', whatsapp_uri], check=True)
-        success = True
-        print("Linux: Triggered 'xdg-open' command.")
+        
+        # 3. Esperar WhatsApp abrir
+        print(f"Aguardando {WAIT_AFTER_OPEN} segundos para o WhatsApp abrir...")
+        time.sleep(WAIT_AFTER_OPEN)
+
+        # 4. Colar a imagem
+        print("\nColando imagem...")
+        pyautogui.hotkey('command', 'v')
+        print(f"Aguardando {WAIT_AFTER_PASTE} segundos para a imagem carregar...")
+        time.sleep(WAIT_AFTER_PASTE)
+
+        # 5. Colar a mensagem
+        print("\nColando mensagem...")
+        pyautogui.hotkey('command', 'v')
+        time.sleep(0.5)
+
+        # 6. Pressionar Enter
+        print("\nPressionando Enter...")
+        pyautogui.press('enter')
+        time.sleep(WAIT_BEFORE_SEND_ENTER)
+
+        print("\nSequência de automação GUI finalizada.")
+        return True
+
+    except pyautogui.FailSafeException:
+        print("\nFAILSAFE TRIGGERED (mouse no canto). Parando automação GUI.")
+        return False
+    except Exception as e:
+        print(f"\nErro durante automação GUI: {e}")
+        try: print(f"Posição do mouse no erro: {pyautogui.position()}")
+        except: pass
+        return False
+
+# --- Bloco Principal ---
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) != 4:
+        print("Uso: python send_message_with_image_mac.py <phone_number> <message> <image_path>")
+        sys.exit(1)
+
+    phone = sys.argv[1]
+    msg = sys.argv[2]
+    img = sys.argv[3]
+    
+    print("\n--- Iniciando Script de Envio de Mensagem com Imagem (macOS) ---")
+    print(f"Número: {phone}")
+    print(f"Mensagem: {msg}")
+    print(f"Imagem: {img}")
+    
+    if send_message_with_image(phone, msg, img):
+        print("--- Script finalizado: Sucesso ---")
     else:
-        print(f"Unsupported OS ({os_name}) for direct URI opening.")
-
-    if success:
-        print("Successfully triggered WhatsApp URI handler.")
-        # Optional: Add a small delay if the subsequent script relies on WhatsApp being open
-        # time.sleep(2) 
-
-except FileNotFoundError: # Handle case where 'open' or 'xdg-open' isn't found
-    print(f"Error: Command required for opening URI not found.")
-    print("Please ensure the necessary command (open/xdg-open) is in your PATH.")
-except subprocess.CalledProcessError as e: # Handle errors from subprocess.run
-     print(f"Error running command to open URI: {e}")
-except Exception as e: # Catch other potential errors (e.g., no handler for whatsapp://)
-    print(f"Error opening WhatsApp URI: {e}")
-    print("Please ensure WhatsApp is installed and registered to handle whatsapp:// links.")
-
-
-print(f"Script finished on OS: {os_name}") 
+        print("--- Script finalizado: Falha ---") 

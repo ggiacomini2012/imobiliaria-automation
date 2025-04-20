@@ -16,7 +16,7 @@ sys.path.append(parent_dir)
 # Define path to the focus script (assuming it's in the project root)
 focus_script_path = os.path.join(parent_dir, 'focus_whatsapp.py')
 # Define path to the new image sending script
-send_image_gui_script_path = os.path.join(parent_dir, 'send_image_gui.py')
+send_image_gui_script_path = os.path.join(parent_dir, 'send_message_with_image_mac.py')
 # Define path to the paste image only script
 paste_script_path = os.path.join(parent_dir, 'paste_image_only.py')
 
@@ -117,7 +117,7 @@ if __name__ == "__main__":
             print(f"  Caption: {formatted_message}")
             try:
                 gui_result = subprocess.run(
-                    [sys.executable, send_image_gui_script_path, phone_number, image_path, formatted_message],
+                    [sys.executable, send_image_gui_script_path, phone_number, formatted_message, image_path],
                     capture_output=True, text=True, check=False, encoding='utf-8', errors='replace',
                     cwd=parent_dir
                 )
@@ -129,7 +129,7 @@ if __name__ == "__main__":
                     print(f"GUI script reported failure (exit code {gui_result.returncode}).")
                     fail_count += 1
             except FileNotFoundError:
-                 print(f"Error: send_image_gui.py not found at {send_image_gui_script_path}")
+                 print(f"Error: send_message_with_image_mac.py not found at {send_image_gui_script_path}")
                  fail_count += 1
             except Exception as gui_e:
                 print(f"Error running GUI script: {gui_e}")
