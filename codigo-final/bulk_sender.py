@@ -68,6 +68,7 @@ def press_enter_if_mac():
     """Checks if the OS is macOS and presses Enter if it is."""
     os_name = platform.system()
     if os_name == 'Darwin':
+        time.sleep(1)
         print("Detected macOS. Assuming window is focused. Pressing Enter...")
         try:
             pyautogui.press('enter')
