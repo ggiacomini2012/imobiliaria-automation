@@ -8,6 +8,64 @@ import os
 app_script = 'app.py'
 url_to_open = 'http://localhost:5000'
 
+def kill_process_on_port(port):
+    """Attempts to find and kill the process using the specified port."""
+    system = platform.system()
+    if system == 'Darwin': # macOS
+        try:
+            # Find the PID using the port
+            result = subprocess.run(['lsof', '-ti', f':{port}'], capture_output=True, text=True, check=False)
+            pid = result.stdout.strip()
+            if pid:
+                print(f"Found process with PID {pid} on port {port}. Attempting to kill...")
+                # Kill the process
+                kill_result = subprocess.run(['kill', '-9', pid], check=False)
+                if kill_result.returncode == 0:
+                    print(f"Successfully killed process {pid}.")
+                else:
+                    print(f"Failed to kill process {pid}. It might have already terminated or require sudo.")
+            else:
+                print(f"No process found running on port {port}.")
+        except FileNotFoundError:
+            print("Error: 'lsof' command not found. Cannot check/kill process on port.")
+        except Exception as e:
+            print(f"An error occurred while trying to kill process on port {port}: {e}")
+    elif system == 'Windows':
+        try:
+            # Find PID using netstat
+            find_pid_cmd = f'netstat -ano | findstr ":{port}"'
+            result = subprocess.run(find_pid_cmd, shell=True, capture_output=True, text=True, check=False)
+            output = result.stdout.strip()
+            pid_to_kill = None
+            if output:
+                lines = output.splitlines()
+                for line in lines:
+                    parts = line.split()
+                    if len(parts) >= 5 and parts[1].endswith(f":{port}"):
+                        pid_to_kill = parts[-1] # Last part is PID
+                        break
+            
+            if pid_to_kill:
+                print(f"Found process with PID {pid_to_kill} on port {port}. Attempting to kill...")
+                # Kill the process using taskkill
+                kill_cmd = f'taskkill /F /PID {pid_to_kill}'
+                kill_result = subprocess.run(kill_cmd, shell=True, capture_output=True, text=True, check=False)
+                if kill_result.returncode == 0:
+                    print(f"Successfully killed process {pid_to_kill}.")
+                else:
+                    print(f"Failed to kill process {pid_to_kill}. Error: {kill_result.stderr.strip()}")
+            else:
+                print(f"No process found listening on port {port}.")
+        except FileNotFoundError:
+            print("Error: 'netstat' or 'taskkill' command not found. Cannot check/kill process on port.")
+        except Exception as e:
+            print(f"An error occurred while trying to kill process on port {port} on Windows: {e}")
+    # Add Linux implementation if needed
+    # elif system == 'Linux':
+    #     pass 
+    else:
+        print(f"Port killing not implemented for OS: {system}")
+
 def open_chrome(url):
     """Attempts to open the given URL specifically in Google Chrome."""
     system = platform.system()
