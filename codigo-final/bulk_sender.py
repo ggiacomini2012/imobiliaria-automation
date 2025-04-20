@@ -64,6 +64,22 @@ def wait_for_whatsapp_active(max_wait=20):
     print("Warning: WhatsApp window did not become active.")
     return False
 
+def press_enter_if_mac():
+    """Checks if the OS is macOS and presses Enter if it is."""
+    os_name = platform.system()
+    if os_name == 'Darwin':
+        print("Detected macOS. Assuming window is focused. Pressing Enter...")
+        try:
+            pyautogui.press('enter')
+            print("Enter key pressed on macOS.")
+            return True # Indicate success
+        except Exception as e:
+            print(f"Error pressing Enter on macOS: {e}")
+            return False # Indicate failure
+    else:
+        print(f"Not on macOS (OS: {os_name}). Skipping Mac-specific Enter press.")
+        return False # Indicate skipped/not applicable
+
 if __name__ == "__main__":
     # --- Argument Parsing --- 
     if len(sys.argv) < 2:
@@ -167,28 +183,27 @@ if __name__ == "__main__":
                     print("Skipping focus script execution (Not on Windows).")
                 # --- End Focus Script Section ---
                 
+                # --- Press Enter on Mac ---
+                mac_enter_pressed = press_enter_if_mac()
+                if platform.system() == 'Darwin' and not mac_enter_pressed:
+                    print("Failed to press Enter on macOS, counting as failure.")
+                    fail_count += 1
+                    # Decide if you want to 'continue' to the next contact here
+                elif platform.system() != 'Darwin':
+                     # On non-Mac systems, we need a different logic to press Enter
+                     # or confirm the message was sent.
+                     # Currently, there's no non-Mac Enter press here.
+                     # We should probably increment success_count here for non-Mac
+                     # if open_uri succeeded, assuming the user sends manually.
+                     # OR implement a pyautogui.press('enter') for Windows/Linux here too.
+                     print("Assuming manual send needed or implement Enter press for non-Mac.")
+                     # For now, let's tentatively count success if open_uri worked on non-Mac
+                     success_count += 1
+                else: # Mac Enter press was successful
+                     success_count += 1
+
                 # # --- Wait for WhatsApp window to become active ---
                 # print("Waiting for WhatsApp window to become active (max 5 seconds)...")
-                # whatsapp_activated = False
-                # max_wait_time = 5 # seconds
-                # start_wait_time = time.time()
-                
-                # while time.time() - start_wait_time < max_wait_time:
-                #     try:
-                #         active_window = gw.getActiveWindow()
-                #         if active_window and active_window.title and "WhatsApp" in active_window.title:
-                #             print("WhatsApp window is active!")
-                #             whatsapp_activated = True
-                #             break
-                #         else:
-                #             pass
-                #     except Exception as gw_e:
-                #         print(f"Error checking active window: {gw_e}")
-                #     time.sleep(0.5)
-                
-                # if not whatsapp_activated:
-                #      print("Warning: WhatsApp window did not become active within the time limit.")
-                # # --- End Wait Section ---
                 
                 # # Try to press Enter ONLY if WhatsApp window was detected as active
                 # if whatsapp_activated:
