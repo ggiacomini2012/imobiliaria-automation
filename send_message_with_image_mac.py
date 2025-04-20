@@ -126,14 +126,24 @@ def send_message_with_image(phone_number, message, image_path):
         print(f"Aguardando {WAIT_AFTER_PASTE} segundos para a imagem carregar...")
         time.sleep(WAIT_AFTER_PASTE)
 
-        # 5. Limpar o clipboard e copiar a mensagem
-        print("\n--- Etapa 5: Copiar Mensagem --- ")
-        print("Limpando clipboard antes de copiar texto...")
-        subprocess.run(['osascript', '-e', 'set the clipboard to ""'], check=False) # Limpa de novo
-        time.sleep(0.5)
-        print("Copiando mensagem para clipboard via pyperclip...")
-        pyperclip.copy(message)
-        time.sleep(0.5)
+        # 5. Limpar o clipboard e copiar a mensagem usando AppleScript diretamente
+        print("\n--- Etapa 5: Copiar Mensagem com AppleScript --- ")
+        
+        # Criando um script AppleScript que define diretamente o conteúdo do clipboard
+        escaped_message = message.replace('"', '\\"')  # Escape de aspas
+        applescript = f'''
+        set the clipboard to "{escaped_message}"
+        '''
+        
+        print(f"Copiando mensagem via AppleScript: '{message}'")
+        copy_result = subprocess.run(['osascript', '-e', applescript], 
+                                 capture_output=True, text=True, check=False)
+        
+        if copy_result.returncode != 0:
+            print(f"Aviso: Possível problema ao copiar texto: {copy_result.stderr}")
+        
+        # Pausa maior para garantir que o clipboard foi atualizado
+        time.sleep(1.0)
 
         # 6. Colar a mensagem
         print("\n--- Etapa 6: Colar Mensagem --- ")
