@@ -167,47 +167,47 @@ if __name__ == "__main__":
                     print("Skipping focus script execution (Not on Windows).")
                 # --- End Focus Script Section ---
                 
-                # --- Wait for WhatsApp window to become active ---
-                print("Waiting for WhatsApp window to become active (max 5 seconds)...")
-                whatsapp_activated = False
-                max_wait_time = 5 # seconds
-                start_wait_time = time.time()
+                # # --- Wait for WhatsApp window to become active ---
+                # print("Waiting for WhatsApp window to become active (max 5 seconds)...")
+                # whatsapp_activated = False
+                # max_wait_time = 5 # seconds
+                # start_wait_time = time.time()
                 
-                while time.time() - start_wait_time < max_wait_time:
-                    try:
-                        active_window = gw.getActiveWindow()
-                        if active_window and active_window.title and "WhatsApp" in active_window.title:
-                            print("WhatsApp window is active!")
-                            whatsapp_activated = True
-                            break
-                        else:
-                            pass
-                    except Exception as gw_e:
-                        print(f"Error checking active window: {gw_e}")
-                    time.sleep(0.5)
+                # while time.time() - start_wait_time < max_wait_time:
+                #     try:
+                #         active_window = gw.getActiveWindow()
+                #         if active_window and active_window.title and "WhatsApp" in active_window.title:
+                #             print("WhatsApp window is active!")
+                #             whatsapp_activated = True
+                #             break
+                #         else:
+                #             pass
+                #     except Exception as gw_e:
+                #         print(f"Error checking active window: {gw_e}")
+                #     time.sleep(0.5)
                 
-                if not whatsapp_activated:
-                     print("Warning: WhatsApp window did not become active within the time limit.")
-                # --- End Wait Section ---
+                # if not whatsapp_activated:
+                #      print("Warning: WhatsApp window did not become active within the time limit.")
+                # # --- End Wait Section ---
                 
-                # Try to press Enter ONLY if WhatsApp window was detected as active
-                if whatsapp_activated:
-                    try:
-                        print("Attempting to press Enter...")
-                        pyautogui.press('enter')
-                        print("Enter key pressed.")
-                        # Contar sucesso APENAS se a colagem não falhou (se tentada)
-                        if not paste_failed:
-                            success_count += 1
-                        else:
-                            print("Enter pressionado, mas colagem da imagem falhou anteriormente.")
-                            fail_count += 1
-                    except Exception as auto_e:
-                        print(f"Error pressing Enter: {auto_e}")
-                        fail_count += 1 
-                else:
-                    print("Skipping Enter press because WhatsApp window was not confirmed active.")
-                    fail_count += 1 
+                # # Try to press Enter ONLY if WhatsApp window was detected as active
+                # if whatsapp_activated:
+                #     try:
+                #         print("Attempting to press Enter...")
+                #         pyautogui.press('enter')
+                #         print("Enter key pressed.")
+                #         # Contar sucesso APENAS se a colagem não falhou (se tentada)
+                #         if not paste_failed:
+                #             success_count += 1
+                #         else:
+                #             print("Enter pressionado, mas colagem da imagem falhou anteriormente.")
+                #             fail_count += 1
+                #     except Exception as auto_e:
+                #         print(f"Error pressing Enter: {auto_e}")
+                #         fail_count += 1 
+                # else:
+                #     print("Skipping Enter press because WhatsApp window was not confirmed active.")
+                #     fail_count += 1 
             else: # open_uri failed
                 fail_count += 1
             # -------------------------------------
