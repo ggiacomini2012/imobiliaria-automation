@@ -18,23 +18,26 @@
             <label for="messageTemplate">Template da Mensagem (use [nome] para o nome do contato):</label>
             <textarea id="messageTemplate" name="messageTemplate" required>Olá [nome], temos uma novidade para você!</textarea>
 
-            <div style="margin-bottom: 15px;">
-                 <label for="imageFile">Anexar Imagem (Opcional):</label>
-                 <input type="file" id="imageFile" name="imageFile" accept="image/png, image/jpeg, image/jpg, image/gif">
-            </div>
+            <div class="form-group" style="display: none;">
 
-            <div>
-                <input type="checkbox" id="includeImage" name="includeImage"> <!-- Re-enabled -->
-                <label for="includeImage" class="checkbox-label">Incluir Imagem Anexada?</label>
+                <div style="margin-bottom: 15px;">
+                    <label for="imageFile">Anexar Imagem (Opcional):</label>
+                    <input type="file" id="imageFile" name="imageFile" accept="image/png, image/jpeg, image/jpg, image/gif">
+                </div>
+                
+                <div>
+                    <input type="checkbox" id="includeImage" name="includeImage"> <!-- Re-enabled -->
+                    <label for="includeImage" class="checkbox-label">Incluir Imagem Anexada?</label>
+                </div>
             </div>
 
             <button type="submit" style="margin-right: 10px;">Iniciar Envio</button>
             <button type="button" id="focus-whatsapp-btn" style="padding: 10px 15px; display: none;">Focar WhatsApp</button>
             <span id="focus-status" style="margin-left: 10px; color: #bdc3c7; display: none;"></span>
         </form>
-
         <div id="status-area"></div>
-
+        <div><button id="clearLogButton">Limpar Log de Enviados</button></div>
+        <div id="logMessage"></div>
     </main>
 
     {% include 'partials/_footer.html' %}
