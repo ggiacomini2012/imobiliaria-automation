@@ -213,6 +213,26 @@ def trigger_focus():
         print(traceback.format_exc())
         return jsonify({'success': False, 'message': error_message, 'output': ''}), 500
 
+# Route to clear the sent log file
+@app.route('/clear-log', methods=['POST'])
+def clear_log():
+    log_file_path = os.path.join(base_dir, 'codigo-final', 'sent_log.txt')
+    print(f"Attempting to clear log file: {log_file_path}")
+    try:
+        if os.path.exists(log_file_path):
+            os.remove(log_file_path)
+            print(f"Successfully deleted log file: {log_file_path}")
+            return jsonify({'success': True, 'message': 'Log de enviados limpo com sucesso!'})
+        else:
+            print(f"Log file not found, nothing to clear: {log_file_path}")
+            return jsonify({'success': True, 'message': 'Log de enviados não encontrado (nada para limpar).'})
+    except Exception as e:
+        error_message = f"Erro ao limpar o log de enviados: {str(e)}"
+        print(error_message)
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({'success': False, 'message': error_message}), 500
+
 if __name__ == '__main__':
     # Makes the server accessible from other devices on the network
     # Use 0.0.0.0 to listen on all available network interfaces

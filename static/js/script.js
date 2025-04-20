@@ -197,4 +197,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     // --- End Focus WhatsApp Button Logic ---
 
+    // --- Clear Log Button Logic ---
+    const clearLogButton = document.getElementById('clearLogButton');
+    const logMessageDiv = document.getElementById('logMessage');
+
+    if (clearLogButton && logMessageDiv) {
+        clearLogButton.addEventListener('click', () => {
+            logMessageDiv.textContent = 'Limpando log...';
+            logMessageDiv.className = ''; // Reset class
+            clearLogButton.disabled = true; // Disable button during request
+
+            fetch('/clear-log', { method: 'POST' })
+                .then(response => {
+                    if (!response.ok) {
+                        // Try to get error message from JSON body if possible
+                        return response.json().then(errData => {
+                            throw new Error(errData.message || `HTTP error! status: ${response.status}`);
+                        }).catch(() => {
+                            // Fallback if response isn't JSON or has no message
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Clear log response:", data);
+                    logMessageDiv.textContent = data.message || 'Resposta recebida do servidor.';
+                    logMessageDiv.className = data.success ? 'success' : 'error';
+                })
+                .catch(error => {
+                    console.error('Clear Log Fetch Error:', error);
+                    logMessageDiv.textContent = `Erro: ${error.message || 'Não foi possível limpar o log.'}`;
+                    logMessageDiv.className = 'error';
+                })
+                .finally(() => {
+                    clearLogButton.disabled = false; // Re-enable button
+                    // Optional: Clear the message after a few seconds
+                    // setTimeout(() => { logMessageDiv.textContent = ''; logMessageDiv.className = ''; }, 5000);
+                });
+        });
+    } else {
+        if (!clearLogButton) console.error('Button #clearLogButton not found.');
+        if (!logMessageDiv) console.error('Div #logMessage not found.');
+    }
+    // --- End Clear Log Button Logic ---
+
 }); // End of DOMContentLoaded 
