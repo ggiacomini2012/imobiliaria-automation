@@ -54,8 +54,13 @@ if browser:
         browser.open(url)
         print(f"Attempting to open {url}...")
         if os_name == 'Windows':
+            #print a message
+            print("Windows detected")
             time.sleep(2)
             #navegate to chrome maybe with tab alt + tab
+            #focus on chrome withouy pyautogui
+            
+
             pyautogui.hotkey('alt', 'tab')
             time.sleep(1)
             #close one tab with pyautogui ctrl + w
@@ -64,8 +69,10 @@ if browser:
             time.sleep(1)
             #go back to whatsapp app with pyautogui alt + tab
             pyautogui.hotkey('alt', 'tab')
-            
+
         if os_name == 'Darwin' or os_name == 'Linux':
+            #print a message
+            print("Darwin or Linux detected")
             time.sleep(1)
             #navegate to chrome
             pyautogui.hotkey('command', 'space')
