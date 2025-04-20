@@ -99,7 +99,16 @@ def send_messages():
     image_file = request.files.get('image_file')
     saved_image_path = None
 
-    if include_image:
+    # Determine which script to use based on OS
+    os_name = platform.system()
+    
+    # Se for macOS e a imagem estiver selecionada, avisar que será ignorada
+    if os_name == 'Darwin' and include_image:
+        print("AVISO: Envio de imagem não suportado no macOS. Será enviado apenas o texto.")
+        include_image = False  # Forçar include_image para False no macOS
+    
+    # Processar a imagem apenas se não estiver no macOS
+    if include_image and os_name != 'Darwin':
         if not image_file or image_file.filename == '':
             return jsonify({'success': False, 'status': 'Erro: Imagem marcada para inclusão, mas nenhum arquivo foi enviado ou o arquivo está vazio.', 'output': ''}), 400
         
@@ -111,11 +120,12 @@ def send_messages():
         except Exception as e:
             print(f"Error saving uploaded image: {e}")
             return jsonify({'success': False, 'status': f'Erro ao salvar a imagem: {e}', 'output': ''}), 500
-    elif image_file:
+    elif image_file and os_name != 'Darwin':
          print("Image file uploaded but 'Include Image' checkbox was not checked. Ignoring image.")
+    elif image_file and os_name == 'Darwin':
+         print("Image file uploaded but macOS doesn't support image sending. Ignoring image.")
 
     # Determine which script to use based on OS
-    os_name = platform.system()
     if os_name == 'Darwin': # macOS
         script_path = bulk_send_script_path_mac
         print("Using macOS specific script for bulk send.")
@@ -127,9 +137,8 @@ def send_messages():
 
     # --- Build the command arguments ---
     cmd_args = [python_executable, script_path, message_template]
-    if include_image and saved_image_path:
-        # Add image path as the next argument IF image is included
-        # The bulk_sender(_mac).py script will need modification to handle this argument (already does)
+    if include_image and saved_image_path and os_name != 'Darwin':
+        # Add image path as the next argument IF image is included AND not on macOS
         cmd_args.append(saved_image_path)
     # ----------------------------------
 
