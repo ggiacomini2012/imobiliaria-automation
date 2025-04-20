@@ -1,15 +1,18 @@
-# send_message_with_image_mac.py - Usa Preview + Cmd+C para imagem
+#!/usr/bin/env python3
+# sudoiamge_mac.py - Script para enviar imagem para WhatsApp no macOS
+# Baseado no send-back_mac.py, com funcionalidade de imagem adicionada
+
 import platform
 import time
 import os
 import subprocess
 import pyautogui
-import pyperclip
 from PIL import Image
+import sys
 
 # Intervalos (ajuste conforme necessário)
 WAIT_AFTER_OPEN = 7.0  # Segundos após abrir o WhatsApp
-WAIT_AFTER_PASTE = 5.0  # AUMENTADO! Segundos após colar imagem
+WAIT_AFTER_PASTE = 5.0  # Segundos após colar imagem
 WAIT_BEFORE_SEND_ENTER = 0.5  # Segundos antes do Enter
 
 def copy_with_preview(image_path):
@@ -100,92 +103,85 @@ def copy_with_preview(image_path):
         print(f"Erro durante o processo: {e}")
         return False
 
-def send_message_with_image(phone_number, message, image_path):
-    """Envia mensagem com imagem no WhatsApp."""
+def open_whatsapp_with_number(phone_number, message=None):
+    """Abre o WhatsApp com o número especificado."""
+    os_name = platform.system()
+    
+    if os_name != 'Darwin':  # Só funciona em macOS
+        print(f"Este script é específico para macOS, mas foi detectado: {os_name}")
+        return False
+    
+    # Construir a URI do WhatsApp
+    whatsapp_uri = f"whatsapp://send?phone={phone_number}"
+    if message:
+        import urllib.parse
+        encoded_message = urllib.parse.quote(message)
+        whatsapp_uri += f"&text={encoded_message}"
+    
     try:
-        # 1. Copiar imagem para clipboard (usando PREVIEW + Cmd+C)
-        print("\n--- Etapa 1: Copiar Imagem via Preview --- ")
-        if not copy_with_preview(image_path):
-            return False
-
-        # 2. Abrir WhatsApp com o número
-        print("\n--- Etapa 2: Abrir WhatsApp --- ")
-        whatsapp_uri = f"whatsapp://send?phone={phone_number}"
-        print(f"Abrindo WhatsApp para {phone_number}...")
+        print(f"Tentando abrir URI do WhatsApp: {whatsapp_uri}")
         subprocess.run(['open', whatsapp_uri], check=True)
+        print("Comando 'open' executado com sucesso.")
+        return True
+    except Exception as e:
+        print(f"Erro ao abrir URI do WhatsApp: {e}")
+        return False
+
+def send_image_to_whatsapp(phone_number, image_path):
+    """Envia imagem para o WhatsApp no macOS."""
+    try:
+        # 1. Copiar imagem para clipboard com Preview
+        print("\n--- Etapa 1: Copiar imagem para clipboard ---")
+        if not copy_with_preview(image_path):
+            print("Falha ao copiar imagem. Abortando.")
+            return False
+        
+        # 2. Abrir WhatsApp com o número
+        print("\n--- Etapa 2: Abrir WhatsApp ---")
+        if not open_whatsapp_with_number(phone_number):
+            print("Falha ao abrir WhatsApp. Abortando.")
+            return False
         
         # 3. Esperar WhatsApp abrir
-        print("\n--- Etapa 3: Esperar WhatsApp --- ")
-        print(f"Aguardando {WAIT_AFTER_OPEN} segundos para o WhatsApp abrir...")
+        print(f"\n--- Etapa 3: Aguardar {WAIT_AFTER_OPEN}s para WhatsApp abrir ---")
         time.sleep(WAIT_AFTER_OPEN)
-
+        
         # 4. Colar a imagem
-        print("\n--- Etapa 4: Colar Imagem --- ")
-        print("Colando imagem (Cmd+V)...")
+        print("\n--- Etapa 4: Colar imagem ---")
+        print("Colando imagem (Command+V)...")
         pyautogui.hotkey('command', 'v')
-        print(f"Aguardando {WAIT_AFTER_PASTE} segundos para a imagem carregar...")
+        
+        # 5. Esperar imagem carregar e pressionar Enter
+        print(f"Aguardando {WAIT_AFTER_PASTE}s para imagem carregar...")
         time.sleep(WAIT_AFTER_PASTE)
-
-        # 5. Limpar o clipboard e copiar a mensagem usando AppleScript diretamente
-        print("\n--- Etapa 5: Copiar Mensagem com AppleScript --- ")
-        
-        # Criando um script AppleScript que define diretamente o conteúdo do clipboard
-        escaped_message = message.replace('"', '\\"')  # Escape de aspas
-        applescript = f'''
-        set the clipboard to "{escaped_message}"
-        '''
-        
-        print(f"Copiando mensagem via AppleScript: '{message}'")
-        copy_result = subprocess.run(['osascript', '-e', applescript], 
-                                 capture_output=True, text=True, check=False)
-        
-        if copy_result.returncode != 0:
-            print(f"Aviso: Possível problema ao copiar texto: {copy_result.stderr}")
-        
-        # Pausa maior para garantir que o clipboard foi atualizado
-        time.sleep(1.0)
-
-        # 6. Colar a mensagem
-        print("\n--- Etapa 6: Colar Mensagem --- ")
-        print("Colando mensagem (Cmd+V)...")
-        pyautogui.hotkey('command', 'v')
-        time.sleep(0.5)
-
-        # 7. Pressionar Enter
-        print("\n--- Etapa 7: Pressionar Enter --- ")
-        print("Pressionando Enter...")
+        print("\n--- Etapa 5: Enviar imagem (Enter) ---")
         pyautogui.press('enter')
         time.sleep(WAIT_BEFORE_SEND_ENTER)
-
-        print("\nSequência de automação GUI finalizada.")
+        
+        print("\nSequência de automação finalizada com sucesso.")
         return True
-
-    except pyautogui.FailSafeException:
-        print("\nFAILSAFE TRIGGERED (mouse no canto). Parando automação GUI.")
-        return False
+        
     except Exception as e:
-        print(f"\nErro durante automação GUI: {e}")
-        try: print(f"Posição do mouse no erro: {pyautogui.position()}")
-        except: pass
+        print(f"Erro durante o processo: {e}")
         return False
 
-# --- Bloco Principal ---
+# Bloco principal
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) != 4:
-        print("Uso: python send_message_with_image_mac.py <phone_number> <message> <image_path>")
+    # Verificar argumentos
+    if len(sys.argv) != 3:
+        print("Uso: python sudoiamge_mac.py <número_telefone> <caminho_imagem>")
         sys.exit(1)
-
-    phone = sys.argv[1]
-    msg = sys.argv[2]
-    img = sys.argv[3]
     
-    print("\n--- Iniciando Script de Envio de Mensagem com Imagem (macOS - Preview Copy) ---")
-    print(f"Número: {phone}")
-    print(f"Mensagem: {msg}")
-    print(f"Imagem: {img}")
+    phone_number = sys.argv[1]
+    image_path = sys.argv[2]
     
-    if send_message_with_image(phone, msg, img):
-        print("--- Script finalizado: Sucesso --- ")
+    print(f"\n--- Iniciando envio de imagem para WhatsApp (macOS) ---")
+    print(f"Número: {phone_number}")
+    print(f"Imagem: {image_path}")
+    
+    if send_image_to_whatsapp(phone_number, image_path):
+        print("--- Envio de imagem concluído com sucesso ---")
+        sys.exit(0)
     else:
-        print("--- Script finalizado: Falha --- ") 
+        print("--- Falha no envio de imagem ---")
+        sys.exit(1) 
