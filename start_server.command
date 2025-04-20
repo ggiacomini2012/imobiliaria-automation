@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script para iniciar o servidor Flask no macOS com um duplo clique
+# Script para iniciar o servidor Flask no macOS com um duplo clique EM SEGUNDO PLANO
 
 # Obtém o diretório onde este script está localizado
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
@@ -7,19 +7,31 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 # Muda para o diretório do script (raiz do projeto)
 cd "$SCRIPT_DIR" || exit 1 # Sai se o diretório não puder ser acessado
 
-# Executa o servidor Flask usando python3
-#executa run_server.py
+# Define o arquivo de log
+LOG_FILE="$SCRIPT_DIR/server.log"
 
-echo "Iniciando o servidor Flask (run_server.py)..."
+# Executa o servidor Flask usando python3 em segundo plano com nohup
+# A saída (stdout e stderr) será redirecionada para server.log
+echo "Iniciando o servidor Flask (run_server.py) em segundo plano..."
+echo "Logs serão escritos em: $LOG_FILE"
 echo "Diretório atual: $(pwd)"
-echo "Executando: python3 run_server.py"
+echo "Executando: nohup python3 run_server.py > \"$LOG_FILE\" 2>&1 &"
 echo "-----------------------------------------"
 
-# Certifique-se de que 'python3' aponta para a instalação correta do Python,
-# especialmente se você usa ambientes virtuais (venv, conda, etc.).
+# Certifique-se de que 'python3' aponta para a instalação correta do Python.
 # Se necessário, ative seu ambiente virtual aqui antes de executar run_server.py.
-python3 run_server.py
+# O comando 'nohup' garante que o processo continue rodando após o terminal fechar.
+# O '&' no final envia o processo para o background.
 
-# O servidor Flask manterá o terminal aberto. Pressione Ctrl+C no terminal para parar.
-# echo "Servidor encerrado. Pressione Enter para fechar esta janela."
-# read -p "" # Descomente se quiser que a janela espere após o servidor parar 
+nohup python3 run_server.py > "$LOG_FILE" 2>&1 &
+
+# A janela do terminal fechará automaticamente.
+# Para PARAR o servidor, você precisará encontrar o ID do processo (PID) e matá-lo.
+# Abra o Terminal e use:
+#   ps aux | grep 'python3 run_server.py'
+# Encontre o PID na segunda coluna e use:
+#   kill <PID>
+# (Substitua <PID> pelo número encontrado)
+
+echo "Comando para iniciar o servidor em segundo plano enviado."
+# A janela deve fechar em breve. 
