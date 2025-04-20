@@ -131,24 +131,31 @@ if __name__ == "__main__":
             print(f"  To: {phone_number}")
             print(f"  Image: {image_path}")
             print(f"  Caption: {formatted_message}")
-            try:
-                gui_result = subprocess.run(
-                    [sys.executable, send_image_gui_script_path, phone_number, image_path, formatted_message],
-                    capture_output=True, text=True, check=False, encoding='utf-8', errors='replace',
-                    cwd=parent_dir
-                )
-                print(f"GUI Script Output:\n--- stdout ---\n{gui_result.stdout}\n--- stderr ---\n{gui_result.stderr}")
-                if gui_result.returncode == 0:
-                    print("GUI script reported success.")
-                    success_count += 1
-                else:
-                    print(f"GUI script reported failure (exit code {gui_result.returncode}).")
+
+            # Check if NOT macOS before attempting GUI automation
+            if platform.system() != 'Darwin':
+                try:
+                    gui_result = subprocess.run(
+                        [sys.executable, send_image_gui_script_path, phone_number, image_path, formatted_message],
+                        capture_output=True, text=True, check=False, encoding='utf-8', errors='replace',
+                        cwd=parent_dir
+                    )
+                    print(f"GUI Script Output:\n--- stdout ---\n{gui_result.stdout}\n--- stderr ---\n{gui_result.stderr}")
+                    if gui_result.returncode == 0:
+                        print("GUI script reported success.")
+                        success_count += 1
+                    else:
+                        print(f"GUI script reported failure (exit code {gui_result.returncode}).")
+                        fail_count += 1
+                except FileNotFoundError:
+                    print(f"Error: send_image_gui.py not found at {send_image_gui_script_path}")
                     fail_count += 1
-            except FileNotFoundError:
-                 print(f"Error: send_image_gui.py not found at {send_image_gui_script_path}")
-                 fail_count += 1
-            except Exception as gui_e:
-                print(f"Error running GUI script: {gui_e}")
+                except Exception as gui_e:
+                    print(f"Error running GUI script: {gui_e}")
+                    fail_count += 1
+            else:
+                # On macOS, skip GUI automation
+                print("Skipping image sending via GUI script on macOS (Darwin).")
                 fail_count += 1
             # -----------------------------------------
         else:
