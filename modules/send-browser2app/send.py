@@ -1,7 +1,9 @@
 import webbrowser
 import platform
 
-url = "https://wa.me/47997676797"
+number = "5547997676797"
+
+url = f"https://api.whatsapp.com/send/?phone={number}&text&type=phone_number&app_absent=0"
 browser = None
 os_name = platform.system()
 
