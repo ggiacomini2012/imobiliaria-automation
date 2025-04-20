@@ -1,5 +1,5 @@
-def messages_function(name, message):
-    return f"""Olá {name}... {message}"""
+# def messages_function(name, message):
+#     return f"""Olá {name}... {message}"""
 
 messages = {
     "message1": "Olá, tudo bem?",
@@ -17,7 +17,7 @@ Vamos pra cima!
 }
 
 #example of how to use the messages function
-print(messages_function("João", messages["message6"]))  
+# print(messages_function("João", messages["message6"]))  
 #output:
 # """🙏🏾
 
@@ -29,4 +29,4 @@ print(messages_function("João", messages["message6"]))
 
 
 # Define which variables can be imported when using "from contacts import *"
-__all__ = ['messages_function', 'messages']
+__all__ = ['messages']

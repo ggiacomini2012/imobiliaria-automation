@@ -32,6 +32,22 @@ Este projeto fornece ferramentas para automatizar o envio de mensagens personali
    python enviar-mensagens.py
    ```
 
+## 🌐 Servidor Web (Flask)
+
+Este projeto também inclui um servidor web simples para facilitar o acionamento do script de envio do WhatsApp.
+
+1.  **Inicie o servidor:**
+    Certifique-se de ter instalado as dependências (incluindo Flask) com `pip install -r requirements.txt`.
+    ```bash
+    python app.py
+    ```
+
+2.  **Acesse a interface:**
+    Abra seu navegador e vá para `http://localhost:5000` ou `http://<SEU_IP_LOCAL>:5000`.
+
+3.  **Acione o script:**
+    Clique no botão "Abrir WhatsApp" na página. Isso executará o script `modules/send-browser2app/send-back.py` no servidor, que por sua vez tentará abrir o WhatsApp Desktop com o número pré-configurado.
+
 ## ⚙️ Configuração
 
 Edite os arquivos relevantes para personalizar:
