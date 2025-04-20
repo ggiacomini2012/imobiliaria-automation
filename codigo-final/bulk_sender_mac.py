@@ -93,17 +93,17 @@ if __name__ == "__main__":
     sent_numbers = load_sent_numbers(log_file_path)
     # -------------------------
 
-    if not test_contacts:
-        print("No contacts found in test_contacts list. Exiting.")
+    if not cleaned_contacts:
+        print("No contacts found in cleaned_contacts list. Exiting.")
         sys.exit(0)
 
-    print(f"Found {len(test_contacts)} contacts.")
+    print(f"Found {len(cleaned_contacts)} contacts.")
     success_count = 0
     fail_count = 0
     skipped_count = 0 # Counter for already sent numbers
 
-    for i, contact in enumerate(test_contacts):
-        print(f"\n--- Processing contact {i+1}/{len(test_contacts)} ---")
+    for i, contact in enumerate(cleaned_contacts):
+        print(f"\n--- Processing contact {i+1}/{len(cleaned_contacts)} ---")
         phone_number = contact.get('phone_number')
         public_name = contact.get('public_name')
 
