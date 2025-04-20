@@ -73,6 +73,12 @@ def press_enter_if_mac():
         try:
             pyautogui.press('enter')
             print("Enter key pressed on macOS.")
+            time.sleep(1)
+            pyautogui.press('enter')
+            print("Enter key pressed on macOS.2")
+            time.sleep(1)
+            pyautogui.press('enter')
+            print("Enter key pressed on macOS.3")
             return True # Indicate success
         except Exception as e:
             print(f"Error pressing Enter on macOS: {e}")
