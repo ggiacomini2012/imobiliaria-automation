@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sobre - Automação Imobiliária</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/about/about.css') }}">
+    <!-- Adicionar outros CSS se necessário, como o do dashboard -->
+</head>
+<body>
+    {% include 'partials/_navbar.html' %}
+    {% include 'partials/_sidebar.html' %}
+
+    <main id="main-content">
+        <div id="about-content">
+            <h1>Sobre Guilherme Giacomini Teixeira</h1>
+            <p><strong>Desenvolvedor de Software</strong> | Desenvolvimento Web Full-Stack | Automação com Python</p>
+            <p>📍 Balneário Camboriú - SC, Brasil</p>
+            <p>🎓 Graduado pela @tryber</p>
+
+            <hr>
+
+            <h2>Sobre Mim</h2>
+            <p>Sou um Desenvolvedor Web Full-Stack apaixonado por automação usando Python. Gosto de construir aplicações robustas e eficientes.</p>
+
+            <h2>Habilidades</h2>
+            <ul>
+                <li><strong>Frontend:</strong> HTML5, CSS3, JavaScript, React</li>
+                <li><strong>Backend:</strong> Node.js, Python</li>
+                <li><strong>Bancos de Dados:</strong> MySQL</li>
+                <li><strong>DevOps/Ferramentas:</strong> Docker, Git</li>
+            </ul>
+
+            <h2>Conecte-se Comigo</h2>
+            <ul>
+                <li><strong>GitHub:</strong> <a href="https://github.com/ggiacomini2012" target="_blank">ggiacomini2012</a></li>
+                <li><strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/guilhermegiacominidev/" target="_blank">guilhermegiacominidev</a></li>
+                <li><strong>Email:</strong> <a href="mailto:ggiacomini2012@gmail.com">ggiacomini2012@gmail.com</a></li>
+            </ul>
+        </div>
+    </main>
+
+    {% include 'partials/_footer.html' %}
+
+    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</body>
+</html> 

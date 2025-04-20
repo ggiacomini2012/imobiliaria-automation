@@ -1,0 +1,61 @@
+/* Additional styles specific to dashboard */
+#dashboard-form {
+    width: 90%;
+    max-width: 700px;
+    margin: 20px auto;
+    padding: 25px;
+    background-color: #34495e; /* Wet Asphalt */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+#dashboard-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #ecf0f1; /* Light Gray */
+}
+#dashboard-form textarea,
+#dashboard-form input[type="checkbox"] {
+    margin-bottom: 15px;
+}
+#dashboard-form textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 10px;
+    border: 1px solid #7f8c8d; /* Gray border */
+    border-radius: 5px;
+    background-color: #2c3e50; /* Darker background */
+    color: #ecf0f1; /* Light text */
+    font-size: 1rem;
+    box-sizing: border-box; /* Include padding in width */
+}
+#dashboard-form .checkbox-label {
+    display: inline-block; /* Align checkbox and label */
+    margin-left: 5px;
+    color: #bdc3c7; /* Silver */
+}
+#dashboard-form button {
+    width: 100%; /* Make button full width */
+    padding: 12px 20px;
+    font-size: 1.1rem;
+}
+#status-area {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #1f2b38; /* Even darker */
+    border-radius: 5px;
+    border: 1px solid #7f8c8d;
+    display: none; /* Hidden by default */
+    white-space: pre-wrap; /* Preserve formatting */
+    max-height: 300px;
+    overflow-y: auto;
+}
+#status-area.processing {
+     color: #f1c40f; /* Yellow */
+}
+#status-area.success {
+     color: #2ecc71; /* Green */
+}
+#status-area.error {
+     color: #e74c3c; /* Red */
+} 

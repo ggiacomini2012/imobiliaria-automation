@@ -1,6 +1,9 @@
 <nav style="background-color: #333; color: white; padding: 10px 20px; text-align: center; position: fixed; width: 100%; top: 0; left: 0; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
     <button id="sidebarToggle" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">&#9776;</button>
-    <strong>Imobiliária Automation</strong>
+    <div>
+        <strong>Imobiliária Automation</strong>
+        <a href="{{ url_for('about') }}" style="color: white; margin-left: 15px; text-decoration: none;">Sobre</a>
+    </div>
     <div style="width: 40px;"></div> <!-- Spacer to balance the toggle button -->
 </nav>
 <div style="height: 50px;"></div> <!-- Spacer for fixed navbar --> 

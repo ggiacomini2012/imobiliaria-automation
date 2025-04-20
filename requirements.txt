@@ -3,5 +3,8 @@ pyautogui==0.9.54
 pyperclip==1.8.2
 keyboard==0.13.5
 pywin32==310
-Flask
-pygetwindow 
+Flask==2.3.3
+pygetwindow
+requests==2.31.0
+Pillow
+# Add other dependencies as needed 

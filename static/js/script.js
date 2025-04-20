@@ -93,30 +93,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageTemplateInput = document.getElementById('messageTemplate');
     const includeImageCheckbox = document.getElementById('includeImage');
     const statusArea = document.getElementById('status-area');
+    const imageFileInput = document.getElementById('imageFile'); // Get the file input
 
-    if (dashboardForm && messageTemplateInput && includeImageCheckbox && statusArea) {
+    if (dashboardForm && messageTemplateInput && includeImageCheckbox && statusArea && imageFileInput) {
         dashboardForm.addEventListener('submit', (event) => {
             event.preventDefault(); // Prevent default form submission
 
             const messageTemplate = messageTemplateInput.value;
             const includeImage = includeImageCheckbox.checked;
+            const imageFile = imageFileInput.files[0]; // Get the selected file
+
+            // Basic validation
+            if (includeImage && !imageFile) {
+                statusArea.textContent = 'Erro: Marcou "Incluir Imagem" mas nenhum arquivo foi selecionado.';
+                statusArea.className = 'error';
+                statusArea.style.display = 'block';
+                return; // Stop submission
+            }
 
             statusArea.textContent = 'Iniciando processo de envio... Aguarde.';
             statusArea.className = 'processing'; // Use class for styling
             statusArea.style.display = 'block';
             dashboardForm.querySelector('button[type="submit"]').disabled = true; // Disable button
 
+            // Use FormData to send text and file
+            const formData = new FormData();
+            formData.append('message_template', messageTemplate);
+            formData.append('include_image', includeImage);
+            if (includeImage && imageFile) {
+                formData.append('image_file', imageFile);
+            }
+
             fetch('/send_messages', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message_template: messageTemplate,
-                    include_image: includeImage // Send image flag even if unused by backend for now
-                }),
+                // DO NOT set Content-Type header when using FormData;
+                // the browser sets it automatically with the correct boundary.
+                body: formData, 
             })
-            .then(response => response.json()) // Always expect JSON back
+            .then(response => response.json()) // Still expect JSON back
             .then(data => {
                 console.log("Bulk send response:", data);
                 statusArea.textContent = `Status: ${data.status}\n\nOutput:\n${data.output || 'Nenhum output recebido.'}`;
@@ -137,5 +151,50 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     } else {
         // console.log('Dashboard form elements not found on this page.');
+        // Add checks for imageFileInput if needed
     }
-}); 
+
+    // --- Focus WhatsApp Button Logic ---
+    const focusBtn = document.getElementById('focus-whatsapp-btn');
+    const focusStatusSpan = document.getElementById('focus-status');
+
+    if (focusBtn && focusStatusSpan) {
+        focusBtn.addEventListener('click', () => {
+            focusStatusSpan.textContent = 'Focando...';
+            focusBtn.disabled = true; // Disable button during request
+
+            fetch('/trigger_focus', { method: 'POST' })
+                .then(response => {
+                    if (!response.ok) {
+                        // Handle HTTP errors (like 500 Internal Server Error)
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Focus script response:", data);
+                    if (data.success) {
+                        focusStatusSpan.textContent = 'Foco OK!';
+                    } else {
+                        focusStatusSpan.textContent = `Falha no foco. (${data.message || 'Erro desconhecido'})`;
+                    }
+                    // Optional: Log full output for debugging
+                    // console.log("Focus script output:", data.output);
+                })
+                .catch(error => {
+                    console.error('Focus Trigger Fetch Error:', error);
+                    focusStatusSpan.textContent = 'Erro ao comunicar.';
+                })
+                .finally(() => {
+                    focusBtn.disabled = false; // Re-enable button
+                    // Clear status message after a delay
+                    setTimeout(() => { focusStatusSpan.textContent = ''; }, 5000); 
+                });
+        });
+    } else {
+        if (!focusBtn) console.error('Button #focus-whatsapp-btn not found.');
+        if (!focusStatusSpan) console.error('Span #focus-status not found.');
+    }
+    // --- End Focus WhatsApp Button Logic ---
+
+}); // End of DOMContentLoaded 

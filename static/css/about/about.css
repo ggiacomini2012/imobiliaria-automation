@@ -1,0 +1,27 @@
+/* Estilos específicos para a página Sobre, se necessário */
+#about-content {
+    padding: 20px;
+    max-width: 800px;
+    margin: 20px auto;
+    background-color: #f8f9fa; /* Cor de fundo clara */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    color: #333; /* Texto escuro */
+}
+#about-content h1, #about-content h2 {
+    color: #2c3e50; /* Azul escuro para títulos */
+}
+#about-content ul {
+    list-style: none;
+    padding: 0;
+}
+#about-content li {
+    margin-bottom: 10px;
+}
+#about-content a {
+    color: #3498db; /* Azul para links */
+    text-decoration: none;
+}
+#about-content a:hover {
+    text-decoration: underline;
+} 
