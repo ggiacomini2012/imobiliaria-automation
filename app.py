@@ -267,6 +267,10 @@ def clear_log():
 if __name__ == '__main__':
     # Makes the server accessible from other devices on the network
     # Use 0.0.0.0 to listen on all available network interfaces
-    # Debug=True allows for auto-reloading on code changes and provides better error pages
     print("Starting Flask server...")
-    app.run(host='0.0.0.0', port=5000, debug=True) 
+    app.run(
+        host='0.0.0.0', 
+        port=5000, 
+        debug=True,
+        use_reloader=False  # Disable reloader to avoid termios issues
+    ) 
