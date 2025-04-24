@@ -60,7 +60,7 @@ def log_sent_number(filepath, number):
     except Exception as e:
         print(f"Warning: Could not write to log file {filepath}: {e}")
 
-def handle_image_sending(image_path, phone_number):
+def handle_image_sending(image_path, phone_number, message_text):
     """Handle the process of sending an image on macOS."""
     if not image_path or not os.path.exists(image_path):
         logging.error(f"Image path is invalid or file does not exist: {image_path}")
@@ -72,8 +72,8 @@ def handle_image_sending(image_path, phone_number):
             logging.error("Failed to copy image to clipboard")
             return False
 
-        # Open WhatsApp with the contact
-        encoded_message = urllib.parse.quote("")  # Empty message for image only
+        # Open WhatsApp with the contact (without message, we'll type it after image)
+        encoded_message = urllib.parse.quote("")
         whatsapp_uri = f"whatsapp://send?phone={phone_number}&text={encoded_message}"
         
         if not open_uri(whatsapp_uri):
@@ -87,23 +87,35 @@ def handle_image_sending(image_path, phone_number):
         max_paste_attempts = 3
         for attempt in range(max_paste_attempts):
             try:
-                # Paste attempt
+                # Paste image
+                logging.info("Pasting image...")
                 pyautogui.hotkey('command', 'v')
-                time.sleep(1.0)  # Short wait between paste and check
+                time.sleep(2.0)  # Wait for image to be pasted
                 
-                # Press Enter to send
-                pyautogui.press('enter')
+                # Press Tab to move to message field
+                logging.info("Moving to message field...")
+                pyautogui.press('tab')
                 time.sleep(0.5)
                 
+                # Type the message
+                logging.info("Typing message...")
+                pyautogui.write(message_text)
+                time.sleep(0.5)
+                
+                # Press Enter to send
+                logging.info("Sending message...")
+                pyautogui.press('enter')
+                time.sleep(1.0)
+                
                 # Consider it successful if we got here
-                logging.info(f"Image sent successfully on attempt {attempt + 1}")
+                logging.info(f"Image and message sent successfully on attempt {attempt + 1}")
                 return True
                 
             except Exception as e:
-                logging.warning(f"Paste attempt {attempt + 1} failed: {e}")
+                logging.warning(f"Send attempt {attempt + 1} failed: {e}")
                 time.sleep(1.0)  # Wait before next attempt
                 
-        logging.error("All paste attempts failed")
+        logging.error("All send attempts failed")
         return False
         
     except Exception as e:
@@ -200,16 +212,16 @@ if __name__ == "__main__":
 
         # Handle image sending if image path is provided
         if image_path:
-            print("Attempting to send image...")
-            if handle_image_sending(image_path, phone_number):
-                print("Image sent successfully")
+            print("Attempting to send image with message...")
+            if handle_image_sending(image_path, phone_number, formatted_message):
+                print("Image and message sent successfully")
                 # --- Log successful send ---
                 log_sent_number(log_file_path, phone_number)
                 sent_numbers.add(phone_number) # Update in-memory set
                 success_count += 1
                 # --------------------------
             else:
-                print("Failed to send image")
+                print("Failed to send image and message")
                 fail_count += 1
         else:
             # --- Enviar Mensagem Somente Texto ---
