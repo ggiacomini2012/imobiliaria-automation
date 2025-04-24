@@ -5,8 +5,13 @@ import platform
 import time
 import urllib.parse
 import pyautogui
+import logging
+from PIL import Image
 
 print("\n=== EXECUTANDO: codigo-final/bulk_sender_mac.py ===\n")
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- Import custom modules ---
 # Add the parent directory (workspace root) to the Python path
@@ -17,6 +22,17 @@ sys.path.append(parent_dir)
 # Define path to the focus script (assuming it's in the project root)
 focus_script_path = os.path.join(parent_dir, 'focus_whatsapp.py')
 # Removidas as referências a scripts de imagem
+
+# Import macOS image utilities
+try:
+    from macos_image_utils import (
+        copy_image_macos_reliable,
+        verify_clipboard_image,
+        monitor_clipboard_changes
+    )
+except ImportError as e:
+    logging.error(f"Failed to import macOS image utilities: {e}")
+    sys.exit(1)
 
 # --- Log File Setup ---
 log_file_path = os.path.join(current_dir, 'sent_log.txt')
@@ -44,19 +60,51 @@ def log_sent_number(filepath, number):
     except Exception as e:
         print(f"Warning: Could not write to log file {filepath}: {e}")
 
-try:
-    from contacts import cleaned_contacts
-    from contacts_template import test_contacts
+def handle_image_sending(image_path, phone_number):
+    """Handle the process of sending an image on macOS."""
+    if not image_path or not os.path.exists(image_path):
+        logging.error(f"Image path is invalid or file does not exist: {image_path}")
+        return False
 
-    # final_contacts = cleaned_contacts
-    final_contacts = test_contacts
+    try:
+        # Copy image to clipboard
+        if not copy_image_macos_reliable(image_path):
+            logging.error("Failed to copy image to clipboard")
+            return False
 
-    from message_func import messages_function
-except ImportError as e:
-    print(f"Error importing modules: {e}")
-    print("Ensure contacts_template.py and message_func.py exist in codigo-final/"
-          "and the script is run from the project root or adjust sys.path.")
-    sys.exit(1)
+        # Wait for clipboard to be ready
+        if not monitor_clipboard_changes(timeout=5.0):
+            logging.error("Clipboard not ready after copying image")
+            return False
+
+        # Verify image is in clipboard
+        if not verify_clipboard_image():
+            logging.error("Image not found in clipboard after copying")
+            return False
+
+        # Open WhatsApp with the contact
+        encoded_message = urllib.parse.quote("")  # Empty message for image only
+        whatsapp_uri = f"whatsapp://send?phone={phone_number}&text={encoded_message}"
+        
+        if not open_uri(whatsapp_uri):
+            logging.error("Failed to open WhatsApp URI")
+            return False
+
+        # Wait for WhatsApp to open
+        time.sleep(5.0)
+
+        # Paste the image
+        pyautogui.hotkey('command', 'v')
+        time.sleep(2.0)  # Wait for image to paste
+
+        # Send the message
+        pyautogui.press('enter')
+        time.sleep(1.0)  # Wait for send to complete
+
+        return True
+    except Exception as e:
+        logging.error(f"Error during image sending: {e}")
+        return False
 
 def open_uri(uri):
     """Opens the WhatsApp URI using the appropriate OS command."""
@@ -78,19 +126,33 @@ def open_uri(uri):
         print(f"Error opening URI: {e}")
         return False
 
+try:
+    from contacts import cleaned_contacts
+    from contacts_template import test_contacts
+
+    # final_contacts = cleaned_contacts
+    final_contacts = test_contacts
+
+    from message_func import messages_function
+except ImportError as e:
+    print(f"Error importing modules: {e}")
+    print("Ensure contacts_template.py and message_func.py exist in codigo-final/"
+          "and the script is run from the project root or adjust sys.path.")
+    sys.exit(1)
+
 if __name__ == "__main__":
     # --- Argument Parsing ---
     if len(sys.argv) < 2:
-        print("Usage: python codigo-final/bulk_sender.py \"Message Template\"")
+        print("Usage: python codigo-final/bulk_sender.py \"Message Template\" [image_path]")
         sys.exit(1)
 
     message_template = sys.argv[1]
-
-    # Removendo a verificação de argumentos de imagem
-    # ------------------------
+    image_path = sys.argv[2] if len(sys.argv) > 2 else None
 
     print(f"Starting bulk process...")
     print(f"Message template: \"{message_template}\"")
+    if image_path:
+        print(f"Image path: \"{image_path}\"")
 
     # --- Load Sent Numbers ---
     sent_numbers = load_sent_numbers(log_file_path)
@@ -132,56 +194,70 @@ if __name__ == "__main__":
             fail_count += 1
             continue
 
-        # --- Enviar Mensagem Somente Texto ---
-        print("Attempting to send text only (macOS)...")
-        encoded_message = urllib.parse.quote(formatted_message)
-        whatsapp_uri = f"whatsapp://send?phone={phone_number}&text={encoded_message}"
-
-        if open_uri(whatsapp_uri):
-            # Wait for WhatsApp to open and potentially load the chat
-            wait_after_uri_open_seconds = 5.0 # Adjust if needed
-            print(f"Waiting {wait_after_uri_open_seconds} seconds for WhatsApp to open...")
-            time.sleep(wait_after_uri_open_seconds)
-
-            # Attempt to press Enter multiple times for reliability
-            enter_attempts = 3
-            enter_interval_seconds = 0.5 # Adjust if needed
-            send_success = False
-            print(f"Attempting to press Enter {enter_attempts} times...")
-            for attempt in range(enter_attempts):
-                try:
-                    print(f"  Enter attempt {attempt + 1}/{enter_attempts}...")
-                    pyautogui.press('enter')
-                    print("  Enter key pressed.")
-                    send_success = True # Assume success if pyautogui doesn't raise an error
-                    # No need to break here, let all attempts run unless failsafe triggers
-                except pyautogui.FailSafeException:
-                     print("FAILSAFE TRIGGERED (moved mouse to corner). Stopping.")
-                     fail_count += 1
-                     send_success = False # Ensure failure is recorded
-                     break # Exit the attempt loop
-                except Exception as auto_e:
-                    print(f"  Error pressing Enter on attempt {attempt + 1}: {auto_e}")
-                    send_success = False # Mark as failed for this attempt
-
-                if attempt < enter_attempts - 1: # Don't sleep after the last attempt
-                     time.sleep(enter_interval_seconds)
-
-            if send_success:
-                 print("Successfully sent Enter command(s).")
-                 # --- Log successful send ---
-                 log_sent_number(log_file_path, phone_number)
-                 sent_numbers.add(phone_number) # Update in-memory set
-                 success_count += 1
-                 # --------------------------
+        # Handle image sending if image path is provided
+        if image_path:
+            print("Attempting to send image...")
+            if handle_image_sending(image_path, phone_number):
+                print("Image sent successfully")
+                # --- Log successful send ---
+                log_sent_number(log_file_path, phone_number)
+                sent_numbers.add(phone_number) # Update in-memory set
+                success_count += 1
+                # --------------------------
             else:
-                 print("Failed to reliably send Enter command.")
-                 fail_count += 1
+                print("Failed to send image")
+                fail_count += 1
+        else:
+            # --- Enviar Mensagem Somente Texto ---
+            print("Attempting to send text only (macOS)...")
+            encoded_message = urllib.parse.quote(formatted_message)
+            whatsapp_uri = f"whatsapp://send?phone={phone_number}&text={encoded_message}"
 
-        else: # open_uri failed
-            print("Failed to open WhatsApp URI.")
-            fail_count += 1
-        # -------------------------------------
+            if open_uri(whatsapp_uri):
+                # Wait for WhatsApp to open and potentially load the chat
+                wait_after_uri_open_seconds = 5.0 # Adjust if needed
+                print(f"Waiting {wait_after_uri_open_seconds} seconds for WhatsApp to open...")
+                time.sleep(wait_after_uri_open_seconds)
+
+                # Attempt to press Enter multiple times for reliability
+                enter_attempts = 3
+                enter_interval_seconds = 0.5 # Adjust if needed
+                send_success = False
+                print(f"Attempting to press Enter {enter_attempts} times...")
+                for attempt in range(enter_attempts):
+                    try:
+                        print(f"  Enter attempt {attempt + 1}/{enter_attempts}...")
+                        pyautogui.press('enter')
+                        print("  Enter key pressed.")
+                        send_success = True # Assume success if pyautogui doesn't raise an error
+                        # No need to break here, let all attempts run unless failsafe triggers
+                    except pyautogui.FailSafeException:
+                         print("FAILSAFE TRIGGERED (moved mouse to corner). Stopping.")
+                         fail_count += 1
+                         send_success = False # Ensure failure is recorded
+                         break # Exit the attempt loop
+                    except Exception as auto_e:
+                        print(f"  Error pressing Enter on attempt {attempt + 1}: {auto_e}")
+                        send_success = False # Mark as failed for this attempt
+
+                    if attempt < enter_attempts - 1: # Don't sleep after the last attempt
+                         time.sleep(enter_interval_seconds)
+
+                if send_success:
+                     print("Successfully sent Enter command(s).")
+                     # --- Log successful send ---
+                     log_sent_number(log_file_path, phone_number)
+                     sent_numbers.add(phone_number) # Update in-memory set
+                     success_count += 1
+                     # --------------------------
+                else:
+                     print("Failed to reliably send Enter command.")
+                     fail_count += 1
+
+            else: # open_uri failed
+                print("Failed to open WhatsApp URI.")
+                fail_count += 1
+            # -------------------------------------
 
         # Pause between contacts
         print("\nPausing before next contact...")
