@@ -94,15 +94,12 @@ def handle_image_sending(image_path, phone_number, message_text):
                         break
                     time.sleep(1)
 
+                time.sleep(10.0)
                 # Paste image
                 logging.info("Pasting image...")
                 pyautogui.hotkey('command', 'v')
                 time.sleep(5.0)  # Wait for image to be pasted
                 
-                # Press Tab to move to message field
-                logging.info("Moving to message field...")
-                pyautogui.press('tab')
-                time.sleep(1.0)  # Increased from 0.5 to 1.0
                 
                 # Type the message
                 logging.info("Typing message...")
