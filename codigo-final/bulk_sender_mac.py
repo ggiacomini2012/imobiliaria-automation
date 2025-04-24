@@ -88,6 +88,12 @@ def handle_image_sending(image_path, phone_number, message_text):
         max_paste_attempts = 3
         for attempt in range(max_paste_attempts):
             try:
+                # dont follow if the image is not in the clipboard, loop and wait 1 second until the image is in the clipboard
+                for i in range(10):
+                    if verify_clipboard_image():
+                        break
+                    time.sleep(1)
+
                 # Paste image
                 logging.info("Pasting image...")
                 pyautogui.hotkey('command', 'v')
