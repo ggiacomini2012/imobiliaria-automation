@@ -8,6 +8,31 @@ import os
 app_script = 'app.py'
 url_to_open = 'http://localhost:5000'
 
+# run lsof -ti:5000 | xargs kill -9
+def kill_process_on_port(port):
+    """Attempts to find and kill the process using the specified port."""
+    system = platform.system()
+    if system == 'Darwin': # macOS
+        try:
+            # Find the PID using the port
+            result = subprocess.run(['lsof', '-ti', f':{port}'], capture_output=True, text=True, check=False)
+            pid = result.stdout.strip()
+            if pid:
+                print(f"Found process with PID {pid} on port {port}. Attempting to kill...")
+                # Kill the process
+                kill_result = subprocess.run(['kill', '-9', pid], check=False)
+                if kill_result.returncode == 0:
+                    print(f"Successfully killed process {pid}.")
+                else:
+                    print(f"Failed to kill process {pid}. It might have already terminated or require sudo.")
+            else:
+                print(f"No process found running on port {port}.")
+        except FileNotFoundError:
+            print("Error: 'lsof' command not found. Cannot check/kill process on port.")
+
+kill_process_on_port(5000)            
+    
+
 def kill_process_on_port(port):
     """Attempts to find and kill the process using the specified port."""
     system = platform.system()
