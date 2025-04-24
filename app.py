@@ -181,16 +181,36 @@ def trigger_focus():
 # Route to clear the sent log file
 @app.route('/clear-log', methods=['POST'])
 def clear_log():
-    log_file_path = os.path.join(base_dir, 'codigo-final', 'sent_log.txt')
-    print(f"Attempting to clear log file: {log_file_path}")
     try:
-        if os.path.exists(log_file_path):
+        # Ensure the codigo-final directory exists
+        codigo_final_dir = os.path.join(base_dir, 'codigo-final')
+        os.makedirs(codigo_final_dir, exist_ok=True)
+        
+        # Define log file path
+        log_file_path = os.path.join(codigo_final_dir, 'sent_log.txt')
+        print(f"Attempting to clear log file: {log_file_path}")
+        
+        # Create empty file if it doesn't exist
+        if not os.path.exists(log_file_path):
+            with open(log_file_path, 'w') as f:
+                pass  # Create empty file
+            print(f"Created empty log file: {log_file_path}")
+            return jsonify({'success': True, 'message': 'Log de enviados criado e está vazio.'})
+            
+        # Try to remove existing file
+        try:
             os.remove(log_file_path)
             print(f"Successfully deleted log file: {log_file_path}")
             return jsonify({'success': True, 'message': 'Log de enviados limpo com sucesso!'})
-        else:
-            print(f"Log file not found, nothing to clear: {log_file_path}")
-            return jsonify({'success': True, 'message': 'Log de enviados não encontrado (nada para limpar).'})
+        except PermissionError:
+            error_message = "Erro de permissão ao tentar limpar o log. O arquivo pode estar em uso."
+            print(error_message)
+            return jsonify({'success': False, 'message': error_message}), 500
+        except Exception as e:
+            error_message = f"Erro ao tentar remover o arquivo: {str(e)}"
+            print(error_message)
+            return jsonify({'success': False, 'message': error_message}), 500
+            
     except Exception as e:
         error_message = f"Erro ao limpar o log de enviados: {str(e)}"
         print(error_message)
