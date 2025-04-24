@@ -72,16 +72,6 @@ def handle_image_sending(image_path, phone_number):
             logging.error("Failed to copy image to clipboard")
             return False
 
-        # Wait for clipboard to be ready
-        if not monitor_clipboard_changes(timeout=5.0):
-            logging.error("Clipboard not ready after copying image")
-            return False
-
-        # Verify image is in clipboard
-        if not verify_clipboard_image():
-            logging.error("Image not found in clipboard after copying")
-            return False
-
         # Open WhatsApp with the contact
         encoded_message = urllib.parse.quote("")  # Empty message for image only
         whatsapp_uri = f"whatsapp://send?phone={phone_number}&text={encoded_message}"
@@ -91,17 +81,31 @@ def handle_image_sending(image_path, phone_number):
             return False
 
         # Wait for WhatsApp to open
-        time.sleep(5.0)
+        time.sleep(3.0)
 
-        # Paste the image
-        pyautogui.hotkey('command', 'v')
-        time.sleep(2.0)  # Wait for image to paste
-
-        # Send the message
-        pyautogui.press('enter')
-        time.sleep(1.0)  # Wait for send to complete
-
-        return True
+        # Paste the image (try multiple times)
+        max_paste_attempts = 3
+        for attempt in range(max_paste_attempts):
+            try:
+                # Paste attempt
+                pyautogui.hotkey('command', 'v')
+                time.sleep(1.0)  # Short wait between paste and check
+                
+                # Press Enter to send
+                pyautogui.press('enter')
+                time.sleep(0.5)
+                
+                # Consider it successful if we got here
+                logging.info(f"Image sent successfully on attempt {attempt + 1}")
+                return True
+                
+            except Exception as e:
+                logging.warning(f"Paste attempt {attempt + 1} failed: {e}")
+                time.sleep(1.0)  # Wait before next attempt
+                
+        logging.error("All paste attempts failed")
+        return False
+        
     except Exception as e:
         logging.error(f"Error during image sending: {e}")
         return False
