@@ -100,10 +100,12 @@ def handle_image_sending(image_path, phone_number, message_text):
                 pyautogui.hotkey('command', 'v')
                 time.sleep(5.0)  # Wait for image to be pasted
                 
+                # Clear clipboard after image paste
+                pyperclip.copy('')  # Clear clipboard
+                time.sleep(0.2)  # Small wait to ensure clipboard is cleared
                 
                 # Type the message
                 logging.info("Typing message...")
-                # piperclip copy message
                 pyperclip.copy(message_text)
                 time.sleep(0.2)
                 pyautogui.hotkey('command', 'v')
