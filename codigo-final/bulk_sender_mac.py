@@ -5,6 +5,7 @@ import platform
 import time
 import urllib.parse
 import pyautogui
+import pyperclip
 import logging
 from PIL import Image
 
@@ -90,7 +91,7 @@ def handle_image_sending(image_path, phone_number, message_text):
                 # Paste image
                 logging.info("Pasting image...")
                 pyautogui.hotkey('command', 'v')
-                time.sleep(2.0)  # Wait for image to be pasted
+                time.sleep(5.0)  # Wait for image to be pasted
                 
                 # Press Tab to move to message field
                 logging.info("Moving to message field...")
@@ -99,7 +100,10 @@ def handle_image_sending(image_path, phone_number, message_text):
                 
                 # Type the message
                 logging.info("Typing message...")
-                pyautogui.write(message_text)
+                # piperclip copy message
+                pyperclip.copy(message_text)
+                time.sleep(0.2)
+                pyautogui.hotkey('command', 'v')
                 time.sleep(0.5)
                 
                 # Press Enter to send
