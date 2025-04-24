@@ -82,7 +82,7 @@ def handle_image_sending(image_path, phone_number, message_text):
             return False
 
         # Wait for WhatsApp to open - increased from 3.0 to 5.0
-        time.sleep(5.0)
+        time.sleep(2.0)
 
         # Paste the image (try multiple times)
         max_paste_attempts = 3
