@@ -89,7 +89,7 @@ def send_messages():
         # Get form data
         message_template = request.form.get('message_template')
         include_image = request.form.get('include_image') == 'true'
-        image_file = request.files.get('image') if include_image else None
+        image_file = request.files.get('imageFile') if include_image else None
         
         if not message_template:
             return jsonify({'error': 'Message template is required'}), 400
@@ -103,25 +103,29 @@ def send_messages():
             # Create uploads directory if it doesn't exist
             os.makedirs('uploads', exist_ok=True)
             
-            # Save image
-            image_path = os.path.join('uploads', image_file.filename)
+            # Save image with secure filename
+            filename = secure_filename(image_file.filename)
+            image_path = os.path.join('uploads', filename)
             image_file.save(image_path)
+            
+            # Get absolute path for the script
+            abs_image_path = os.path.abspath(image_path)
             
         # Determine OS and construct command
         if sys.platform == 'darwin':  # macOS
             if include_image and image_path:
                 # Use bulk_sender_mac.py with image support
-                cmd = ['python', 'bulk_sender_mac.py', message_template, image_path]
+                cmd = ['python', bulk_send_script_path_mac, message_template, abs_image_path]
             else:
                 # Use bulk_sender_mac.py without image
-                cmd = ['python', 'bulk_sender_mac.py', message_template]
+                cmd = ['python', bulk_send_script_path_mac, message_template]
         else:  # Windows
             if include_image and image_path:
                 # Use bulk_sender.py with image support
-                cmd = ['python', 'bulk_sender.py', message_template, image_path]
+                cmd = ['python', bulk_send_script_path_win, message_template, abs_image_path]
             else:
                 # Use bulk_sender.py without image
-                cmd = ['python', 'bulk_sender.py', message_template]
+                cmd = ['python', bulk_send_script_path_win, message_template]
                 
         # Run the command
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

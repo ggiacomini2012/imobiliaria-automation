@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('message_template', messageTemplate);
             formData.append('include_image', includeImage);
             if (includeImage && imageFile) {
-                formData.append('image_file', imageFile);
+                formData.append('imageFile', imageFile);
             }
 
             fetch('/send_messages', {
