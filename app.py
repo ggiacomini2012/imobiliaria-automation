@@ -85,97 +85,58 @@ def trigger_single_send():
 
 @app.route('/send_messages', methods=['POST'])
 def send_messages():
-    # Get data from form fields instead of JSON
-    message_template = request.form.get('message_template')
-    # Checkbox value will be 'true' (string) if checked, None otherwise
-    include_image_str = request.form.get('include_image')
-    include_image = include_image_str == 'true'
-
-    print(f"Received data in /send_messages: template='{message_template}', include_image={include_image}")
-
-    if not message_template:
-        return jsonify({'success': False, 'status': 'Erro: Template da mensagem não fornecido.', 'output': ''}), 400
-
-    image_file = request.files.get('image_file')
-    saved_image_path = None
-
-    # Determine which script to use based on OS
-    os_name = platform.system()
-    
-    # Se for macOS e a imagem estiver selecionada, avisar que será ignorada
-    if os_name == 'Darwin' and include_image:
-        print("AVISO: Envio de imagem não suportado no macOS. Será enviado apenas o texto.")
-        include_image = False  # Forçar include_image para False no macOS
-    
-    # Processar a imagem apenas se não estiver no macOS
-    if include_image and os_name != 'Darwin':
-        if not image_file or image_file.filename == '':
-            return jsonify({'success': False, 'status': 'Erro: Imagem marcada para inclusão, mas nenhum arquivo foi enviado ou o arquivo está vazio.', 'output': ''}), 400
-        
-        try:
-            filename = secure_filename(image_file.filename)
-            saved_image_path = os.path.join(UPLOAD_FOLDER, filename)
-            image_file.save(saved_image_path)
-            print(f"Image saved successfully to: {saved_image_path}")
-        except Exception as e:
-            print(f"Error saving uploaded image: {e}")
-            return jsonify({'success': False, 'status': f'Erro ao salvar a imagem: {e}', 'output': ''}), 500
-    elif image_file and os_name != 'Darwin':
-         print("Image file uploaded but 'Include Image' checkbox was not checked. Ignoring image.")
-    elif image_file and os_name == 'Darwin':
-         print("Image file uploaded but macOS doesn't support image sending. Ignoring image.")
-
-    # Determine which script to use based on OS
-    if os_name == 'Darwin': # macOS
-        script_path = bulk_send_script_path_mac
-        print("Using macOS specific script for bulk send.")
-    else: # Default to Windows/original script
-        script_path = bulk_send_script_path_win
-        print("Using default/Windows script for bulk send.")
-
-    python_executable = sys.executable
-
-    # --- Build the command arguments ---
-    cmd_args = [python_executable, script_path, message_template]
-    if include_image and saved_image_path and os_name != 'Darwin':
-        # Add image path as the next argument IF image is included AND not on macOS
-        cmd_args.append(saved_image_path)
-    # ----------------------------------
-
     try:
-        print(f"Attempting to execute bulk send script with args: {cmd_args}")
+        # Get form data
+        message_template = request.form.get('message_template')
+        include_image = request.form.get('include_image') == 'true'
+        image_file = request.files.get('image') if include_image else None
         
-        # Capture output to show in the status area.
-        # Prepare environment for the subprocess, ensuring UTF-8 I/O
-        sub_env = os.environ.copy()
-        sub_env["PYTHONIOENCODING"] = "utf-8"
-
-        result = subprocess.run(
-            cmd_args, # Use the constructed arguments list
-            capture_output=True, text=True, check=False, encoding='utf-8', errors='replace',
-            cwd=base_dir, # Set the current working directory to the project root
-            env=sub_env # Pass the modified environment
-        )
-
-        output = f"--- stdout ---\n{result.stdout}\n--- stderr ---\n{result.stderr}"
-        print(f"Bulk send script finished. Exit code: {result.returncode}")
-        print(output)
-
-        if result.returncode == 0:
-            return jsonify({'success': True, 'status': 'Processo de envio em massa concluído.', 'output': output})
+        if not message_template:
+            return jsonify({'error': 'Message template is required'}), 400
+            
+        # Save image if included
+        image_path = None
+        if include_image and image_file:
+            if not image_file.filename:
+                return jsonify({'error': 'No image file selected'}), 400
+                
+            # Create uploads directory if it doesn't exist
+            os.makedirs('uploads', exist_ok=True)
+            
+            # Save image
+            image_path = os.path.join('uploads', image_file.filename)
+            image_file.save(image_path)
+            
+        # Determine OS and construct command
+        if sys.platform == 'darwin':  # macOS
+            if include_image and image_path:
+                # Use bulk_sender_mac.py with image support
+                cmd = ['python', 'bulk_sender_mac.py', message_template, image_path]
+            else:
+                # Use bulk_sender_mac.py without image
+                cmd = ['python', 'bulk_sender_mac.py', message_template]
+        else:  # Windows
+            if include_image and image_path:
+                # Use bulk_sender.py with image support
+                cmd = ['python', 'bulk_sender.py', message_template, image_path]
+            else:
+                # Use bulk_sender.py without image
+                cmd = ['python', 'bulk_sender.py', message_template]
+                
+        # Run the command
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        
+        if process.returncode == 0:
+            return jsonify({'success': True, 'message': 'Messages sent successfully'})
         else:
-            return jsonify({'success': False, 'status': f'Processo de envio em massa falhou (código {result.returncode}).', 'output': output})
-
-    except FileNotFoundError:
-        error_message = f"Erro: Executável Python ou script de envio em massa não encontrado. Script: {script_path}"
-        print(error_message)
-        return jsonify({'success': False, 'status': 'Erro interno do servidor (script não encontrado).', 'output': error_message}), 500
+            return jsonify({
+                'error': 'Failed to send messages',
+                'details': stderr.decode('utf-8')
+            }), 500
+            
     except Exception as e:
-        error_message = f"Erro inesperado ao executar o envio em massa: {str(e)}"
-        print(error_message)
-        import traceback
-        print(traceback.format_exc())
-        return jsonify({'success': False, 'status': 'Erro interno do servidor.', 'output': error_message}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/about')
 def about():

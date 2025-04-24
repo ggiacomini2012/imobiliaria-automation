@@ -5,9 +5,14 @@
 import sys
 import os
 import time
+import logging
 import subprocess
 import pyautogui
 from PIL import Image
+from macos_image_utils import copy_image_macos_reliable
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 print("\n=== EXECUTANDO: send_image_mac.py ===\n")
 
@@ -116,6 +121,74 @@ def send_image(phone_number, image_path):
         print(f"Erro na automação GUI: {e}")
         return False
 
+def send_image_to_whatsapp(image_path, contact_number, caption=None):
+    """
+    Send an image to a WhatsApp contact on macOS.
+    
+    Args:
+        image_path (str): Path to the image file
+        contact_number (str): Contact's phone number
+        caption (str, optional): Caption text for the image
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # Verify image exists
+        if not os.path.exists(image_path):
+            logging.error(f"Image file not found: {image_path}")
+            return False
+            
+        # Copy image to clipboard
+        logging.info(f"Copying image to clipboard: {image_path}")
+        if not copy_image_macos_reliable(image_path):
+            logging.error("Failed to copy image to clipboard")
+            return False
+            
+        # Open WhatsApp with contact
+        logging.info(f"Opening WhatsApp for contact: {contact_number}")
+        whatsapp_url = f"whatsapp://send?phone={contact_number}"
+        subprocess.run(['open', whatsapp_url])
+        
+        # Wait for WhatsApp to open
+        time.sleep(2.0)
+        
+        # Paste image (Command+V)
+        logging.info("Pasting image from clipboard")
+        subprocess.run(['osascript', '-e', 
+            'tell application "System Events" to keystroke "v" using command down'])
+        
+        # Wait for image to load
+        time.sleep(1.0)
+        
+        # Add caption if provided
+        if caption:
+            logging.info("Adding caption")
+            # Press Tab to move to caption field
+            subprocess.run(['osascript', '-e', 
+                'tell application "System Events" to keystroke tab'])
+            time.sleep(0.5)
+            
+            # Type caption
+            subprocess.run(['osascript', '-e', 
+                f'tell application "System Events" to keystroke "{caption}"'])
+            time.sleep(0.5)
+        
+        # Send message (Return key)
+        logging.info("Sending message")
+        subprocess.run(['osascript', '-e', 
+            'tell application "System Events" to keystroke return'])
+        
+        # Wait for send to complete
+        time.sleep(1.0)
+        
+        logging.info("Image sent successfully")
+        return True
+        
+    except Exception as e:
+        logging.error(f"Error sending image: {e}", exc_info=True)
+        return False
+
 # Bloco principal
 if __name__ == "__main__":
     # Verificar argumentos
@@ -130,7 +203,7 @@ if __name__ == "__main__":
     print(f"Número: {phone_number}")
     print(f"Imagem: {image_path}")
     
-    if send_image(phone_number, image_path):
+    if send_image_to_whatsapp(image_path, phone_number):
         print("--- Envio de imagem completado com sucesso ---")
         sys.exit(0)
     else:
