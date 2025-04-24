@@ -91,56 +91,102 @@ def send_messages():
         include_image = request.form.get('include_image') == 'true'
         image_file = request.files.get('imageFile') if include_image else None
         
+        print(f"Received request - Template: {message_template}, Include Image: {include_image}")
+        
         if not message_template:
-            return jsonify({'error': 'Message template is required'}), 400
+            return jsonify({'success': False, 'error': 'Message template is required', 'status': 'Error: Template missing'}), 400
             
         # Save image if included
         image_path = None
         if include_image and image_file:
             if not image_file.filename:
-                return jsonify({'error': 'No image file selected'}), 400
+                return jsonify({'success': False, 'error': 'No image file selected', 'status': 'Error: No image selected'}), 400
                 
-            # Create uploads directory if it doesn't exist
-            os.makedirs('uploads', exist_ok=True)
-            
-            # Save image with secure filename
-            filename = secure_filename(image_file.filename)
-            image_path = os.path.join('uploads', filename)
-            image_file.save(image_path)
-            
-            # Get absolute path for the script
-            abs_image_path = os.path.abspath(image_path)
+            try:
+                # Create uploads directory if it doesn't exist
+                os.makedirs('uploads', exist_ok=True)
+                
+                # Save image with secure filename
+                filename = secure_filename(image_file.filename)
+                image_path = os.path.join('uploads', filename)
+                image_file.save(image_path)
+                print(f"Image saved to: {image_path}")
+                
+                # Get absolute path for the script
+                abs_image_path = os.path.abspath(image_path)
+                print(f"Absolute image path: {abs_image_path}")
+            except Exception as e:
+                error_msg = f"Failed to save image: {str(e)}"
+                print(error_msg)
+                return jsonify({'success': False, 'error': error_msg, 'status': 'Error: Image save failed'}), 500
             
         # Determine OS and construct command
+        python_executable = sys.executable
         if sys.platform == 'darwin':  # macOS
+            script_path = bulk_send_script_path_mac
             if include_image and image_path:
-                # Use bulk_sender_mac.py with image support
-                cmd = ['python', bulk_send_script_path_mac, message_template, abs_image_path]
+                cmd = [python_executable, script_path, message_template, abs_image_path]
             else:
-                # Use bulk_sender_mac.py without image
-                cmd = ['python', bulk_send_script_path_mac, message_template]
+                cmd = [python_executable, script_path, message_template]
         else:  # Windows
+            script_path = bulk_send_script_path_win
             if include_image and image_path:
-                # Use bulk_sender.py with image support
-                cmd = ['python', bulk_send_script_path_win, message_template, abs_image_path]
+                cmd = [python_executable, script_path, message_template, abs_image_path]
             else:
-                # Use bulk_sender.py without image
-                cmd = ['python', bulk_send_script_path_win, message_template]
+                cmd = [python_executable, script_path, message_template]
+                
+        print(f"Executing command: {' '.join(cmd)}")
                 
         # Run the command
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = process.communicate()
-        
-        if process.returncode == 0:
-            return jsonify({'success': True, 'message': 'Messages sent successfully'})
-        else:
+        try:
+            process = subprocess.Popen(cmd, 
+                                    stdout=subprocess.PIPE, 
+                                    stderr=subprocess.PIPE,
+                                    text=True,
+                                    encoding='utf-8',
+                                    errors='replace')
+            stdout, stderr = process.communicate()
+            
+            print("Process output:")
+            print(f"STDOUT:\n{stdout}")
+            print(f"STDERR:\n{stderr}")
+            
+            if process.returncode == 0:
+                return jsonify({
+                    'success': True, 
+                    'status': 'Messages sent successfully',
+                    'output': stdout
+                })
+            else:
+                error_msg = stderr or "Unknown error occurred"
+                print(f"Process failed with return code {process.returncode}: {error_msg}")
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to send messages',
+                    'status': f'Error: Process failed with code {process.returncode}',
+                    'details': error_msg,
+                    'output': stdout
+                }), 500
+                
+        except Exception as e:
+            error_msg = f"Failed to execute bulk send process: {str(e)}"
+            print(error_msg)
             return jsonify({
-                'error': 'Failed to send messages',
-                'details': stderr.decode('utf-8')
+                'success': False,
+                'error': error_msg,
+                'status': 'Error: Process execution failed'
             }), 500
             
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        error_msg = f"Server error: {str(e)}"
+        print(f"Unexpected error in send_messages: {error_msg}")
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': error_msg,
+            'status': 'Error: Server error occurred'
+        }), 500
 
 @app.route('/about')
 def about():

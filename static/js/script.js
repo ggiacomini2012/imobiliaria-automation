@@ -130,23 +130,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 // the browser sets it automatically with the correct boundary.
                 body: formData, 
             })
-            .then(response => response.json()) // Still expect JSON back
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errData => {
+                        throw new Error(errData.error || `HTTP error! status: ${response.status}`);
+                    }).catch(err => {
+                        if (err instanceof SyntaxError) {
+                            // If the response is not JSON, throw a more descriptive error
+                            throw new Error(`Server error (${response.status}). Please check the server logs.`);
+                        }
+                        throw err;
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 console.log("Bulk send response:", data);
-                statusArea.textContent = `Status: ${data.status}\n\nOutput:\n${data.output || 'Nenhum output recebido.'}`;
-                if (data.success) {
-                    statusArea.className = 'success';
-                } else {
-                    statusArea.className = 'error';
+                let statusMessage = data.status || 'Status desconhecido';
+                if (data.error) {
+                    statusMessage += `\n\nErro: ${data.error}`;
                 }
+                if (data.details) {
+                    statusMessage += `\n\nDetalhes: ${data.details}`;
+                }
+                if (data.output) {
+                    statusMessage += `\n\nOutput:\n${data.output}`;
+                }
+                
+                statusArea.textContent = statusMessage;
+                statusArea.className = data.success ? 'success' : 'error';
             })
             .catch(error => {
                 console.error('Bulk Send Fetch Error:', error);
-                statusArea.textContent = `Erro de comunicação com o servidor ao tentar enviar em massa.\nDetalhes: ${error}`;
+                statusArea.textContent = `Erro: ${error.message}`;
                 statusArea.className = 'error';
             })
             .finally(() => {
-                 dashboardForm.querySelector('button[type="submit"]').disabled = false; // Re-enable button
+                dashboardForm.querySelector('button[type="submit"]').disabled = false; // Re-enable button
             });
         });
     } else {
