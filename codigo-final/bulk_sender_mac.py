@@ -81,8 +81,8 @@ def handle_image_sending(image_path, phone_number, message_text):
             logging.error("Failed to open WhatsApp URI")
             return False
 
-        # Wait for WhatsApp to open
-        time.sleep(3.0)
+        # Wait for WhatsApp to open - increased from 3.0 to 5.0
+        time.sleep(5.0)
 
         # Paste the image (try multiple times)
         max_paste_attempts = 3
@@ -96,7 +96,7 @@ def handle_image_sending(image_path, phone_number, message_text):
                 # Press Tab to move to message field
                 logging.info("Moving to message field...")
                 pyautogui.press('tab')
-                time.sleep(0.5)
+                time.sleep(1.0)  # Increased from 0.5 to 1.0
                 
                 # Type the message
                 logging.info("Typing message...")
@@ -109,7 +109,7 @@ def handle_image_sending(image_path, phone_number, message_text):
                 # Press Enter to send
                 logging.info("Sending message...")
                 pyautogui.press('enter')
-                time.sleep(1.0)
+                time.sleep(2.0)  # Increased from 1.0 to 2.0
                 
                 # Consider it successful if we got here
                 logging.info(f"Image and message sent successfully on attempt {attempt + 1}")
@@ -117,7 +117,7 @@ def handle_image_sending(image_path, phone_number, message_text):
                 
             except Exception as e:
                 logging.warning(f"Send attempt {attempt + 1} failed: {e}")
-                time.sleep(1.0)  # Wait before next attempt
+                time.sleep(2.0)  # Increased from 1.0 to 2.0 - wait before next attempt
                 
         logging.error("All send attempts failed")
         return False
