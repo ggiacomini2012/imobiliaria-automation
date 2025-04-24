@@ -1,10 +1,25 @@
+# Core dependencies
+Flask==2.3.3
+requests==2.31.0
+Pillow==10.0.0
+
+# Windows-specific dependencies
 pywhatkit==5.4
 pyautogui==0.9.54
 pyperclip==1.8.2
 keyboard==0.13.5
 pywin32==310
-Flask==2.3.3
-pygetwindow
-requests==2.31.0
-Pillow
+pygetwindow==0.0.9
+
+# macOS-specific dependencies
+appscript==1.2.2  # For AppleScript integration
+pyobjc-framework-Quartz==9.2  # For clipboard and image handling
+pyobjc-framework-Cocoa==9.2  # For macOS system integration
+pyobjc-framework-ScriptingBridge==9.2  # For application automation
+
+# Development tools
+black==23.7.0  # Code formatting
+pytest==7.4.0  # Testing
+pytest-cov==4.1.0  # Test coverage
+
 # Add other dependencies as needed 
