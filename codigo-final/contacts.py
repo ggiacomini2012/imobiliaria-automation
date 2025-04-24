@@ -1,4 +1,4 @@
-final_contacts = [
+cleaned_contacts = [
     {
         "phone_number": "554796418638",
         "public_name": "Abreu"
@@ -8630,4 +8630,4 @@ final_contacts = [
 ];
 
 # Define which variables can be imported when using "from contacts import *"
-__all__ = ['final_contacts']
+__all__ = ['cleaned_contacts']
