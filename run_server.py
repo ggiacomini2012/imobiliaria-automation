@@ -6,7 +6,7 @@ import os
 
 # Path to the Flask app script
 app_script = 'app.py'
-url_to_open = 'http://localhost:5001'
+url_to_open = 'http://localhost:5000'
 
 def kill_process_on_port(port):
     """Attempts to find and kill the process using the specified port."""
